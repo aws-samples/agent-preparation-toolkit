@@ -1,0 +1,81 @@
+openapi: 3.0.0
+info:
+  title: 'HR Agent'
+  version: 1.0.0
+  description: "APIs for HR"
+paths:
+  /select:
+    get:
+      summary: 'hr select'
+      description: "Execute SQL query on employee database. This endpoint allows querying employee information including ID, name, and hire date. The database contains a single table 'employees' with columns (id, name, hire_date)."
+      operationId: "select"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: sql
+          in: query
+          description: 'SQL Select query to execute'
+          required: true
+          schema:
+            type: string
+            pattern: '^SELECT\s+.*$'
+            example: "SELECT name, hire_date FROM employees WHERE id = 1"
+      responses:
+        '200':
+          description: "Query executed successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties:
+                    type: string
+                description: "Array of objects containing employee records with column names as keys"
+                example: [
+                  {
+                    "id": "1",
+                    "name": "Kazuhito Go",
+                    "hire_date": "2020-01-01"
+                  }
+                ]
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "SQLクエリが指定されていません。"
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "不正なSQLクエリが検出されました。"
+        '500':
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "データベース接続エラー"
+      security:
+        - api_key: []
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header

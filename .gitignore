@@ -1,0 +1,10 @@
+*.js
+!custom-resources/oss-index.js
+!jest.config.js
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+agent_ids.json

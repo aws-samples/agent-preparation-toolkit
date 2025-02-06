@@ -1,0 +1,59 @@
+import { Construct } from 'constructs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda'
+import * as s3 from 'aws-cdk-lib/aws-s3';
+
+export interface AgentRoleProps{
+  accountId: string;
+  region: string;
+  agentName: string;
+  knowledgeBaseIds: string[];
+  roleName: string;
+  lambdaFunctions: lambda.Function[];
+  s3Buckets: s3.Bucket[];
+}
+
+export class AgentRole extends Construct {
+  public readonly roleArn: string;
+  constructor(scope: Construct, id: string, props: AgentRoleProps) {
+    super(scope, id);
+    
+    const bedrockPolicy = new iam.ManagedPolicy(this, 'bedrockPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['bedrock:InvokeModel'],
+          resources: [
+            `arn:aws:bedrock:${props.region}::foundation-model/*`
+          ]
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'bedrock:Retrieve',
+            'bedrock:RetrieveAndGenerate'
+          ],
+          resources: props.knowledgeBaseIds.map(id =>
+            `arn:aws:bedrock:${props.region}:${props.accountId}:knowledge-base/${id}`
+          )
+        }),
+      ]
+    });
+
+    const agentRole = new iam.Role(this, 'AgentRole', {
+      roleName: `AmazonBedrockExecutionRoleForAgents_${props.roleName}`,
+      assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com'),
+      managedPolicies: [bedrockPolicy],
+    });
+
+    for (const lambdaFunction of props.lambdaFunctions){
+      lambdaFunction.grantInvoke(agentRole);
+    }
+
+    for (const bucket of props.s3Buckets){
+      bucket.grantRead(agentRole);
+    }
+
+    this.roleArn = agentRole.roleArn
+  }
+}

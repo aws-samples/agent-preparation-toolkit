@@ -1,0 +1,77 @@
+openapi: 3.0.0
+info:
+  title: 'HR Agent'
+  version: 1.0.0
+  description: "APIs for Support History"
+paths:
+  /select:
+    get:
+      summary: 'hr select'
+      description: "Execute SQL query on support history database. This endpoint allows querying support information including error_code, support, date, supporter, device_id. The database contains a single table 'support' with columns (error_code TEXT, support TEXT , date DATE, supporter TEXT, device_id TEXT)."
+      operationId: "select"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: sql
+          in: query
+          description: 'SQL Select query to execute'
+          required: true
+          schema:
+            type: string
+            pattern: '^SELECT\s+.*$'
+            example: "SELECT error_code, support, date, supporter, device_id FROM support WHERE error_code = 'E-01'"
+      responses:
+        '200':
+          description: "Query executed successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties:
+                    type: string
+                description: "Array of objects containing support records with column names as keys"
+                example: [
+                  {"error_code": "E-01", "support": "給紙トレイの用紙補充と用紙ガイドの調整を実施。センサー部分の清掃も行った", "date": "2023-11-01", "supporter": "山田太郎", "device_id": "PRN-2023-0001"}
+                ]
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "SQLクエリが指定されていません。"
+        '403':
+          description: "Forbidden"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "不正なSQLクエリが検出されました。"
+        '500':
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "データベース接続エラー"
+      security:
+        - api_key: []
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header
