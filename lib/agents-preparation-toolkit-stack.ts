@@ -15,6 +15,8 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     
     const modelId: ModelId = 'anthropic.claude-3-haiku-20240307-v1:0'; // anthropic.claude-3-5-sonnet-20240620-v1:0
 
+    // ----------------- 人事の Agent 実装例 -----------------
+    
     const hrKnowledgeBase = new KnowledgeBase(this, 'HumanResourceKnowledgeBase', {
       env: env,
       region: region,
@@ -80,6 +82,8 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
       exportName: (hrAgent.agentName),
     });
 
+    // ----------------- プロダクトサポートの Agent 実装例 -----------------
+
     const supportKnowledgeBase = new KnowledgeBase(this, 'SupportKnowledgeBase', {
       env: env,
       region: region,
@@ -140,7 +144,8 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
       exportName: (supportAgent.agentName),
     });
 
-new cdk.CfnOutput(this, 'StackName', {
+    // スタック名の出力
+    new cdk.CfnOutput(this, 'StackName', {
       value: this.stackName,
     });
   }
