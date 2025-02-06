@@ -6,7 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import { BucketDeployment } from './bucket-deployment';
 
-type OpenApiPath = `${string}.json`;
+type OpenApiPath = `${string}.json` | `${string}.yaml`;
 
 export interface ActionGroupProps {
   openApiSchemaPath: OpenApiPath;

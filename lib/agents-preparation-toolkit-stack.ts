@@ -15,6 +15,17 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     
     const modelId: ModelId = 'anthropic.claude-3-haiku-20240307-v1:0'; // anthropic.claude-3-5-sonnet-20240620-v1:0
 
+    // ----------------- Python Coder Agent の実装例 -----------------
+    // Action Group だけで完結する例
+    // ユーザーは処理を自然言語で記述するだけで、コードとテストコードとテスト結果まで返す
+    // const pythonCoderActionGroup = new ActionGroup(this, 'PythonCoderActionGroup', {
+    //   openApiSchemaPath: './action-groups/python-coder/schema/api-schema.json',
+    //   lambdaFunctionPath: './action-groups/python-coder/lambda/',
+    //   actionGroupName: 'action-group-sample',
+    // })
+
+    
+    
     // ----------------- 人事の Agent 実装例 -----------------
     
     const hrKnowledgeBase = new KnowledgeBase(this, 'HumanResourceKnowledgeBase', {
@@ -33,7 +44,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     });
 
     const hrActionGroup = new ActionGroup(this, 'HumanResourceActionGroup', {
-      openApiSchemaPath: './action-groups/hr/schema/api-schema.json',
+      openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/hr/lambda/',
       actionGroupName: 'action-group-sample',
       // lambda がほかのリソースにアクセスする場合に記述する
@@ -99,7 +110,7 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
       embeddingModelId: 'amazon.titan-embed-text-v2:0'
     });
     const supportActionGroup = new ActionGroup(this, 'SupportActionGroup', {
-      openApiSchemaPath: './action-groups/product-support/schema/api-schema.json',
+      openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/product-support/lambda/',
       actionGroupName: 'support-action-group-sample'
     })
