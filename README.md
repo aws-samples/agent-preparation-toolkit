@@ -22,6 +22,9 @@ cd agent-build-kit
 # パッケージのインストール
 npm install
 
+# CDK Bootstrap
+cdk bootstrap
+
 # Agent のデプロイ
 npm run cdk:deploy
 
