@@ -59,11 +59,23 @@ class AsyncAwsOperations:
     async def process_ingestion_jobs(self, ids):
         ingestion_jobs = []
         for id_info in ids:
-            for data_source_id in id_info['DataSourceId']:
+            # knowledgeBaseId が存在しない場合はスキップ
+            if 'knowledgeBaseId' not in id_info:
+                print(
+                    f"Skipping ingestion job as knowledgeBaseId is not present in: {id_info}"
+                )
+                continue
+
+            for data_source_id in id_info.get('DataSourceId', []):
                 job = await self.start_ingestion_job(
                     id_info['knowledgeBaseId'], data_source_id
                 )
                 ingestion_jobs.append(job)
+
+        # ingestion_jobs が空の場合は早期リターン
+        if not ingestion_jobs:
+            print("No ingestion jobs to process")
+            return []
 
         status_tasks = [self.check_ingestion_job_status(job) for job in ingestion_jobs]
         await asyncio.gather(*status_tasks)

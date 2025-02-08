@@ -1,21 +1,8 @@
-import {ModelId, ModelGroup} from '../types/agent';
+import { ModelGroup, Prompt } from '../types';
 
-const modelGroups: Record<ModelId, ModelGroup> = {
-  'anthropic.claude-3-haiku-20240307-v1:0': 'claude3',
-  'anthropic.claude-3-5-sonnet-20240620-v1:0' : 'claude3.5',
-};
-
-interface PromptConfig {
-  preProcessingPrompt: string;
-  orchestration: string;
-  knowledgeBaseResponseGeneration: string;
-  postProcessing: string;
-  memorySummarization: string;
-}
-
-const groupPromptConfigs: Record<ModelGroup, PromptConfig> = {
+export const DEFAULT_PROMPTS: Record<ModelGroup, Prompt> = {
   'claude3': {
-    preProcessingPrompt: `
+    preProcessing: `
 {
   "anthropic_version": "bedrock-2023-05-31",
   "system": 
@@ -183,7 +170,7 @@ $search_results$
     memorySummarization:``, //CfnAgent が対応時に実装
   },
   'claude3.5': {
-    preProcessingPrompt: `
+    preProcessing: `
 {
     "anthropic_version": "bedrock-2023-05-31",
     "system": "あなたはユーザー入力をカテゴリーに分類するエージェントです。あなたの仕事は、これらの入力を関数呼び出しエージェントに渡す前に分類することです。関数呼び出しエージェントの目的は、ユーザーの質問に答えるために関数を呼び出すことです。
@@ -322,17 +309,4 @@ $search_results$
 `,
     memorySummarization:``, //CfnAgent が対応時に実装
   },
-};
-
-export class Prompts {
-  static getPromptConfig(modelId: ModelId): PromptConfig {
-    // モデルのグループを取得
-    const group = modelGroups[modelId];
-    
-    // グループの基本設定を取得
-    const baseConfig = groupPromptConfigs[group];
-    
-    // 設定をマージして返す
-    return baseConfig;
-  }
 }

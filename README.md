@@ -11,6 +11,14 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 
 ## 使い方
 
+> [!NOTE]
+> AWS のリージョンは `us-west-2` で動作確認しています。
+
+> [!NOTE]
+> デプロイする環境で docker daemon が動いている必要があります。  
+> [colima](https://github.com/abiosoft/colima) で動作を確認しています。
+> 事前に `colima start` をしておいてください。
+
 ```shell
 # リポジトリの Clone
 # URL は差し替える
@@ -20,7 +28,7 @@ git clone https://github.com/aws-samples/agent-preparation-toolkit
 cd agent-build-kit
 
 # パッケージのインストール
-npm install
+npm install && cd custom-resources && npm ci && cd ..
 
 # CDK Bootstrap
 cdk bootstrap

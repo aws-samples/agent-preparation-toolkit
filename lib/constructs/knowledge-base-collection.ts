@@ -3,7 +3,7 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as aoss from 'aws-cdk-lib/aws-opensearchserverless';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import {EmbeddingModelId, ModelVectorMapping} from '../types/agent'
+import {EmbeddingModelId, ModelVectorMapping} from '../types/model'
 
 const UUID = 'BCF7EDFD-EC37-4A75-8E74-E3D06645197E';
 

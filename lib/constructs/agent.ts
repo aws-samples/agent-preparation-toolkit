@@ -3,7 +3,7 @@ import * as bedrock from 'aws-cdk-lib/aws-bedrock';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { AgentRole } from './agents-role';
 import { ActionGroup } from './action-group';
-import { ModelId } from '../types/agent'
+import { ModelId } from '../types/model'
 
 export interface AgentProps {
   readonly env: string;
@@ -22,7 +22,7 @@ export interface AgentProps {
     KNOWLEDGE_BASE_RESPONSE_GENERATION: string;
     POST_PROCESSING: string;
   };
-  readonly knowledgeBases: [{
+  readonly knowledgeBases?: [{
     knowledgeBaseId : string,
     description: string,
   }
@@ -41,7 +41,7 @@ export class Agent extends Construct {
       accountId: props.accountId,
       region: props.region,
       agentName: `${props.env}${props.name}`,
-      knowledgeBaseIds: props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId),
+      knowledgeBaseIds: props.knowledgeBases ? props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId): [],
       roleName: props.name,
       lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
       s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
@@ -51,10 +51,10 @@ export class Agent extends Construct {
       agentName: `${props.env}${props.name}`,
       agentResourceRoleArn: agentRole.roleArn,
       instruction: props.prompts.instruction,
-      knowledgeBases: props.knowledgeBases.map(knowledgeBase => ({
+      knowledgeBases: props.knowledgeBases ? props.knowledgeBases.map(knowledgeBase => ({
         knowledgeBaseId: knowledgeBase.knowledgeBaseId,
         description: knowledgeBase.description,
-      })),
+      })) : [],
       foundationModel: props.modelId,
       idleSessionTtlInSeconds:600,
       actionGroups: [

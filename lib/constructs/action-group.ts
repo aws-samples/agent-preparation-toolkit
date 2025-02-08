@@ -23,6 +23,7 @@ export class ActionGroup extends Construct {
   public readonly lambdaFunction: lambda.Function;
   public readonly lambdaRole: iam.Role;
   public readonly bucket: s3.Bucket;
+  public readonly bucketDeployment: BucketDeployment 
 
   constructor(scope: Construct, id: string, props: ActionGroupProps) {
     super(scope, id);
@@ -33,7 +34,9 @@ export class ActionGroup extends Construct {
       sourcePaths : [props.openApiSchemaPath],
     });
 
-    this.bucket = bucketDeployment.bucket
+    this.bucketDeployment = bucketDeployment;
+
+    this.bucket = bucketDeployment.bucket;
     
     this.apiSchemaBucketName = this.bucket.bucketName;
     
@@ -50,7 +53,16 @@ export class ActionGroup extends Construct {
 
     this.lambdaFunction = new lambda.Function(this, 'Function', {
       runtime: lambda.Runtime.PYTHON_3_13,
-      code: lambda.Code.fromAsset(path.join(props.lambdaFunctionPath)),
+      code: lambda.Code.fromAsset(path.join(props.lambdaFunctionPath),{
+        bundling: {
+          image: lambda.Runtime.PYTHON_3_13.bundlingImage,
+          command: [
+            'bash', '-c',
+            'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+          ],
+        },
+        exclude: ['venv', '__pycache__', '.mypy_cache', '.pytest_cache', '.venv', 'node_modules', '.git', 'cdk.out', 'docs', 'tests'],
+      }),
       handler: 'index.lambda_handler',
       memorySize: 256,
       timeout: cdk.Duration.seconds(30),
