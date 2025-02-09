@@ -10,7 +10,7 @@ def main():
     with open('agent_ids.json', 'rt', encoding='utf-8') as f:
         documents = json.load(f)
     prompts = {
-        'dev-human-resource-agent': 'Kazuhito Go という社員の年休付与日数は？今日の日付も合わせて調べて。',
+        'dev-human-resource-agent': 'Kazuhito Go の今年度の年休付与日数は？',
         'dev-product-support-agent': 'E-03',
         'dev-python-coder': 'フィボナッチ数列を列挙するコード',
     }

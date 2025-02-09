@@ -1,13 +1,8 @@
-# Agent Preparation Toolkit
+# Agent Preparation Toolkit (APT)
 
 ## これは？
 生成 AI における Agent をすぐに体感できるサンプル実装です。
-Amazon Bedrock Agents を使ってすぐに Agent を動かすことができるほか、使用している Knowledge Bases のデータや Lambda 関数を差し替えたり付け加えたりすることで自社用の Agent にできます。
-
-> [!IMPORTANT]
-> Amazon Bedrock Agents で LLM が SQL を考えて Action Group に登録されている AWS Lambda の Lambda 関数が SQL を実行する仕組みです。  
-> 本サンプルでは Lambda 関数上に立てている SQLite の DB に対してクエリを投げており、Lambda 関数上で INSERT や DROP の命令を除外する仕組みが入っています。  
-> 実際には RDS や Athena などの DB に対してクエリを投げることもあると思いますので、そのときは Lambda のロールや、DB のユーザーに対して、SELECT (READ) 系の実行しかできないよう権限の制御をかけてください。
+Amazon Bedrock Agents を使ってすぐに Agent を動かすことができるほか、使用している Knowledge Bases のデータや Lambda 関数を差し替えたり付け加えたりすることで自社用の Agent に改造できます。
 
 ## 使い方
 
@@ -21,7 +16,6 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 
 ```shell
 # リポジトリの Clone
-# URL は差し替える
 git clone https://github.com/aws-samples/agent-preparation-toolkit
 
 # カレントディレクトリをリポジトリに移す
@@ -40,9 +34,42 @@ npm run cdk:deploy
 # CDK の出力にあるStackName = の後ろの値をコピーする
 # 例: Dev-AgentPreparationToolkitStack.StackName = Dev-AgentPreparationToolkitStack
 
-# DataSource の同期
+# DataSource の同期 
+# {YOUR_STACK_NAME} には Dev-AgentPreparationToolkitStack などを入力
 python 1_sync.py -s {YOUR_STACK_NAME} # DataSource の同期が走る
 
-# Agent 呼び出し
+# Agent 呼び出しサンプル
 python 2_invoke.py 
 ```
+
+## プリセットの Agents
+
+これらの Agent は `lib/agents-preparation-toolkit-stack.ts` の各 Agent 定義部分をコメントアウトすることでそれぞれ無効化することができます。  
+必要なものだけをご利用ください。
+
+### Python Coder
+ユーザーは Python Coder にコーディングして欲しい内容を与えると、Python Coder は自分でコードを書き、自動でテストし、コードとテスト結果を返します。  
+コードは単一ファイルで実行できる前提で、リポジトリ丸ごと作成する処理はできません。
+![python-coder-architecture](./image/python-coder.png)
+
+### Human Resource Agent
+Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く SQLite) に社員の入社日が格納されています。  
+各社員の今年の年休付与日数を問い合わせることができます。
+![human-resource-agent-architecture](./image/human-resource-agent.png)
+
+### Product Support Agent
+プリンタのエラーコードを持つ Knowledge Base と、Database (Lambda 内で動く SQLite) にエラーコードごとの対応履歴が格納されています。  
+エラーコードを与えるとどんなことをすれば直る可能性があるかを教えてくれます。
+![human-resource-agent-architecture](./image/product-support-agent.png)
+
+> [!IMPORTANT]
+> Human Resource Agent 及び Product Support Agent には Amazon Bedrock Agents で LLM が SQL を考えて Action Group に登録されている AWS Lambda の Lambda 関数が SQL を実行する仕組みが入っています。  
+> 本サンプルでは Lambda 関数上に立てている SQLite の DB に対してクエリを投げており、Lambda 関数上で INSERT や DROP の命令を除外する仕組みが入っています。  
+> 実際には RDS や Athena などの DB に対してクエリを投げるはずですが、そのときは Lambda のロールや、DB のユーザーに対して、SELECT (READ) 系の実行しかできないよう権限の制御をかけてください。
+
+
+## Generative AI Use Cases JP (通称: GenU) 連携
+このリポジトリに GUI は無いですが、[GenU](https://github.com/aws-samples/generative-ai-use-cases-jp) を利用することで、簡単に GUI を作成できます。
+`1_sync.py` を実行したあと、`genu.json` という json ファイルが出来上がります。  
+GenU の `./packages/cdk/parameter.ts` もしくは `./packages/cdk/cdk.json` の agents パラメータの配列の中に json ファイルの中身を格納してください。  
+詳細は [手動で作成した Agent を追加](https://github.com/aws-samples/generative-ai-use-cases-jp/blob/main/docs/DEPLOY_OPTION.md#%E6%89%8B%E5%8B%95%E3%81%A7%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F-agent-%E3%82%92%E8%BF%BD%E5%8A%A0) を参照ください。
