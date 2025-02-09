@@ -49,6 +49,9 @@ paths:
                       error:
                         type: string
                         description: "Error messages and test failure details"
+                      executionTime:
+                        type: string
+                        description: "Test execution time in seconds"
                       code:
                         type: string
                         description: "Original code that was tested"

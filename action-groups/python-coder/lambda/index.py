@@ -2,24 +2,51 @@ import tempfile
 import pytest
 import os
 import traceback
+import logging
 from typing import Dict, Any
 from io import StringIO
+from datetime import datetime
+
+# ログの設定
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# ログフォーマットの設定
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# 既存のハンドラをクリアして新しいハンドラを追加
+if logger.handlers:
+    logger.handlers.clear()
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
-def write_code(code: str, filename: str, directory: str):
+def write_code(code: str, filename: str, directory: str) -> str:
+    """コードをファイルに書き込む"""
     file_path = os.path.join(directory, filename)
-    with open(file_path, 'w') as f:
-        f.write(code)
-    return file_path
+    logger.debug(f"Writing code to file: {file_path}")
+    try:
+        with open(file_path, 'w') as f:
+            f.write(code)
+        logger.info(f"Successfully wrote code to {filename}")
+        return file_path
+    except Exception as e:
+        logger.error(f"Failed to write code to {filename}: {str(e)}")
+        raise
 
 
 def run_tests(test_path: str) -> Dict[str, Any]:
+    """テストを実行する"""
+    logger.info(f"Starting test execution: {test_path}")
     try:
         capture_output = StringIO()
         stderr_output = StringIO()
 
+        start_time = datetime.now()
         plugin = CaptureManager(capture_output, stderr_output)
         result = pytest.main(["-v", test_path], plugins=[plugin])
+        execution_time = (datetime.now() - start_time).total_seconds()
 
         output = capture_output.getvalue()
         error_output = stderr_output.getvalue()
@@ -27,9 +54,13 @@ def run_tests(test_path: str) -> Dict[str, Any]:
         if result == 0:
             status = "success"
             message = "All tests passed!"
+            logger.info(f"Tests passed successfully in {execution_time:.2f} seconds")
         else:
             status = "failure"
             message = "Some tests failed."
+            logger.warning(f"Tests failed in {execution_time:.2f} seconds")
+            logger.debug(f"Test output: {output}")
+            logger.debug(f"Error output: {error_output}")
 
         return {
             "status": status,
@@ -37,18 +68,24 @@ def run_tests(test_path: str) -> Dict[str, Any]:
             "exitCode": result,
             "output": output,
             "error": error_output,
+            "executionTime": f"{execution_time:.2f}s",
         }
     except Exception as e:
+        logger.error(f"Test execution failed: {str(e)}")
+        logger.error(traceback.format_exc())
         return {
             "status": "error",
             "message": str(e),
             "exitCode": 1,
             "output": "",
             "error": str(e),
+            "executionTime": "0s",
         }
 
 
 class CaptureManager:
+    """テスト出力をキャプチャするプラグイン"""
+
     def __init__(self, stdout_capture, stderr_capture):
         self.stdout_capture = stdout_capture
         self.stderr_capture = stderr_capture
@@ -56,27 +93,31 @@ class CaptureManager:
     def pytest_runtest_logreport(self, report):
         if report.failed:
             if hasattr(report, "longrepr"):
-                self.stderr_capture.write(str(report.longrepr))
+                error_msg = str(report.longrepr)
+                self.stderr_capture.write(error_msg)
+                logger.error(f"Test failed: {report.nodeid}")
+                logger.debug(f"Error details: {error_msg}")
 
 
-def main(event):
+def main(event: Dict) -> Dict:
+    """メイン処理を実行する"""
+    request_id = event.get('sessionId', 'unknown')
+    logger.info(f"Starting main function with request ID: {request_id}")
+
     try:
-        print('main 関数スタート')
-        print('イベント受信')
-        print(event)  # デバッグ用
+        logger.debug(f"Received event: {event}")
 
         parameters = {param["name"]: param["value"] for param in event["parameters"]}
         code = parameters.get("code", "")
         test_code = parameters.get("test_code", "")
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            # 同じディレクトリにコードとテストコードを書き込む
+            logger.info(f"Created temporary directory: {temp_dir}")
+
             code_path = write_code(code, "main.py", temp_dir)
             test_path = write_code(test_code, "test_main.py", temp_dir)
 
             result = run_tests(test_path)
-
-            # コードとテストコードも結果に含める
             result["code"] = code
             result["test_code"] = test_code
 
@@ -90,13 +131,13 @@ def main(event):
                     "responseBody": {"application/json": {"result": result}},
                 },
             }
-        print('--処理完了--')
-        print(response)  # デバッグ用
-        return response
+
+            logger.info(f"Request {request_id} completed successfully")
+            return response
 
     except Exception as e:
-        print('--例外発生--')
-        print(e)  # デバッグ用
+        logger.error(f"Request {request_id} failed with error: {str(e)}")
+        logger.error(traceback.format_exc())
         return {
             "messageVersion": "1.0",
             "response": {
@@ -114,38 +155,13 @@ def main(event):
         }
 
 
-def lambda_handler(event, context):
+def lambda_handler(event: Dict, context: Any) -> Dict:
     """Lambda handler"""
+    if context:
+        logger.info(f"Lambda function ARN: {context.invoked_function_arn}")
+        logger.info(f"CloudWatch log stream name: {context.log_stream_name}")
+        logger.info(f"CloudWatch log group name: {context.log_group_name}")
+        logger.info(f"Request ID: {context.aws_request_id}")
+        logger.info(f"Mem. limits(MB): {context.memory_limit_in_mb}")
+
     return main(event)
-
-
-if __name__ == "__main__":
-    event = {
-        'messageVersion': '1.0',
-        'parameters': [
-            {
-                'name': 'code',
-                'type': 'string',
-                'value': 'def fibonacci(n):\n    if not isinstance(n, int):\n        raise TypeError("Input must be an integer")\n    if n < 0:\n        raise ValueError("Input must be non-negative")\n    if n == 0:\n        return []\n    if n == 1:\n        return [0]\n    \n    fib = [0, 1]\n    for i in range(2, n):\n        fib.append(fib[i-1] + fib[i-2])\n    return fib\n\n# テスト用のコード\ndef test_fibonacci_basic():\n    assert fibonacci(0) == []\n    assert fibonacci(1) == [0]\n    assert fibonacci(2) == [0, 1]\n    assert fibonacci(5) == [0, 1, 1, 2, 3]\n    assert fibonacci(8) == [0, 1, 1, 2, 3, 5, 8, 13]\n\ndef test_fibonacci_error_cases():\n    with pytest.raises(ValueError):\n        fibonacci(-1)\n    with pytest.raises(TypeError):\n        fibonacci(3.5)\n    with pytest.raises(TypeError):\n        fibonacci("3")\n\ndef test_fibonacci_specific_positions():\n    result = fibonacci(10)\n    assert result[7] == 13  # 8番目の数\n    assert result[9] == 34  # 10番目の数',
-            },
-            {
-                'name': 'test_code',
-                'type': 'string',
-                'value': 'from main import fibonacci\nimport pytest\n\ndef test_fibonacci_basic():\n    assert fibonacci(0) == []\n    assert fibonacci(1) == [0]\n    assert fibonacci(2) == [0, 1]\n    assert fibonacci(5) == [0, 1, 1, 2, 3]\n    assert fibonacci(8) == [0, 1, 1, 2, 3, 5, 8, 13]\n\ndef test_fibonacci_error_cases():\n    with pytest.raises(ValueError):\n        fibonacci(-1)\n    with pytest.raises(TypeError):\n        fibonacci(3.5)\n    with pytest.raises(TypeError):\n        fibonacci("3")\n\ndef test_fibonacci_specific_positions():\n    result = fibonacci(10)\n    assert result[7] == 13  # 8番目の数\n    assert result[9] == 34  # 10番目の数',
-            },
-        ],
-        'sessionId': '290000338583472',
-        'agent': {
-            'name': 'Dev-python-coder',
-            'version': 'DRAFT',
-            'id': 'PDBIB8DMUT',
-            'alias': 'TSTALIASID',
-        },
-        'actionGroup': 'tester',
-        'promptSessionAttributes': {},
-        'sessionAttributes': {},
-        'inputText': 'フィボナッチ数列を列挙するコード',
-        'httpMethod': 'GET',
-        'apiPath': '/code/test',
-    }
-    lambda_handler(event, None)
