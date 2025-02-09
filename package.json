@@ -26,7 +26,7 @@
     "typescript-eslint": "^8.23.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.175.1",
+    "aws-cdk-lib": "2.178.0",
     "cdk-nag": "^2.35.10",
     "constructs": "^10.0.0"
   }
