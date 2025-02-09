@@ -2,6 +2,7 @@ import { ModelGroup, Prompt } from '../types';
 
 export const DEFAULT_PROMPTS: Record<ModelGroup, Prompt> = {
   'claude3': {
+    instruction: ``,
     preProcessing: `
 {
   "anthropic_version": "bedrock-2023-05-31",
@@ -170,6 +171,7 @@ $search_results$
     memorySummarization:``, //CfnAgent が対応時に実装
   },
   'claude3.5': {
+    instruction: ``,
     preProcessing: `
 {
     "anthropic_version": "bedrock-2023-05-31",
@@ -273,17 +275,17 @@ $search_results$
   </answer_part>
 </answer>
 `,
-    postProcessing:`
-{
-    "anthropic_version": "bedrock-2023-05-31",
-    "system": "",
-    "messages": [
-        {
-            "role" : "user",
-            "content" : [{
-                "type": "text",
-                "text": "
-あなたは、関数呼び出しエージェントが出力する回答にさらなるコンテキストを提供するエージェントです。関数呼び出しエージェントは、ユーザーの質問を受け取り、提供された適切な関数（関数呼び出しはAPIコールと同等）を呼び出して、実世界でアクションを取り、ユーザーの質問に答えるための情報を収集します。
+    postProcessing:`{
+  "anthropic_version": "bedrock-2023-05-31",
+  "system": "",
+  "messages": [
+    {
+      "role" : "user",
+      "content" : [{
+        "type": "text",
+        "text": "
+あなたは、関数呼び出しエージェントが出力する回答にさらなるコンテキストを提供するエージェントです。
+関数呼び出しエージェントは、ユーザーの質問を受け取り、提供された適切な関数（関数呼び出しはAPIコールと同等）を呼び出して、実世界でアクションを取り、ユーザーの質問に答えるための情報を収集します。
 時として、関数呼び出しエージェントは、ユーザーが関数呼び出しエージェントが取ったアクションのコンテキストを理解していないため、混乱を招く可能性のある応答を生成することがあります。以下に例を示します:
 <example>
 ユーザーが関数呼び出しエージェントに伝えます:
@@ -298,15 +300,14 @@ $search_results$
 重要な点として、理想的な回答では、ユーザーから隠したい実際の関数名などの基盤となる実装の詳細を公開しないようにします。
 最終応答で作成するAPIや関数名、またはこれらの名前への参照を含めないでください。このポリシーに違反する例は次のようになります：「注文を更新するために、靴の色を黒に、サイズを10に変更するために注文管理APIを呼び出しました。」この例での最終応答は代わりに次のようになるべきです：「注文管理システムを確認し、靴の色を黒に、サイズを10に変更しました。」
 これから最終応答を作成します。元のユーザー入力は <user_input>$question$</user_input> です。
-関数呼び出しエージェントから最新の生の応答は次のとおりです：<latest_response>$latest_response$</latest_response>
+関数呼び出しエージェントの最新の生の応答は次のとおりです：<latest_response>$latest_response$</latest_response>
 そして、この会話で関数呼び出しエージェントが今までに取ったアクションの履歴は次のとおりです：<history>$responses$</history>
 変換した応答を <final_response></final_response> XMLタグ内に**必ず日本語で**出力してください。
                 "
             }]
         }
     ]
-}
-`,
+}`,
     memorySummarization:``, //CfnAgent が対応時に実装
   },
 }

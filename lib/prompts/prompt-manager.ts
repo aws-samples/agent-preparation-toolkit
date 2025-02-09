@@ -12,19 +12,19 @@ export class PromptManager {
     return DEFAULT_PROMPTS[modelGroup];
   }
 
-  private getCustomPrompt(useCaseId: string): CustomPrompt | undefined {
-    return CUSTOM_PROMPTS.find(prompt => prompt.useCaseId === useCaseId);
+  private getCustomPrompt(agentPromptsId: string): CustomPrompt | undefined {
+    return CUSTOM_PROMPTS.find(prompt => prompt.agentPromptsId === agentPromptsId);
   }
 
-  getPrompts(model: ModelId, useCaseId?: string): Prompt {
+  getPrompts(model: ModelId, agentPromptsId?: string): Prompt {
     const modelGroup = this.getModelGroup(model);
     const defaultPrompts = this.getDefaultPrompts(modelGroup);
 
-    if (!useCaseId) {
+    if (!agentPromptsId) {
       return defaultPrompts;
     }
 
-    const customPrompt = this.getCustomPrompt(useCaseId);
+    const customPrompt = this.getCustomPrompt(agentPromptsId);
     if (!customPrompt) {
       return defaultPrompts;
     }

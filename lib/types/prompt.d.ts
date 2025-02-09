@@ -1,4 +1,5 @@
 export interface Prompt {
+  instruction: string;
   preProcessing: string;
   orchestration: string;
   knowledgeBaseResponseGeneration: string;
@@ -7,5 +8,5 @@ export interface Prompt {
 }
 
 export interface CustomPrompt extends Partial<Prompt> {
-  useCaseId: string;
+  agentPromptsId: string;
 }

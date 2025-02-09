@@ -85,6 +85,7 @@ class AsyncAwsOperations:
     async def save_agent_ids(self, ids):
         documents = [
             {
+                'agentName': id_info['agentName'],
                 'agentId': id_info['agentId'],
                 'agentAliasId': id_info['agentAliasId'],
             }

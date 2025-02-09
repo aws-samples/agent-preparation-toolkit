@@ -11,7 +11,7 @@ def main():
     prompts = [
         'フィボナッチ数列を列挙するコード',
         # 'Kazuhito Go の年休付与日数は？ただし現在は 2025/1/31 です。',
-        # 'E-03'
+        # 'E-03',
     ]
     for doc, prompt in zip(documents, prompts):
         print(f'user: {prompt}')

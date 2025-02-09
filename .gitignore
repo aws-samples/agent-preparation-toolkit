@@ -8,3 +8,5 @@ node_modules
 cdk.out
 
 agent_ids.json
+
+__pycache__/*
