@@ -13,7 +13,7 @@ class AwsOperations:
         parser.add_argument(
             '--stack-name',
             '-s',
-            required=False,
+            required=True,
             help='Cfn Stack Name',
         )
         return parser.parse_args()
@@ -91,8 +91,19 @@ class AwsOperations:
             }
             for id_info in ids
         ]
-
         with open('agent_ids.json', 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(documents, indent=2))
+
+        # GenU 向け
+        documents = [
+            {
+                'displayName': id_info['agentName'],
+                'agentId': id_info['agentId'],
+                'aliasId': id_info['agentAliasId'],
+            }
+            for id_info in ids
+        ]
+        with open('genu.json', 'wt', encoding='utf-8') as f:
             f.write(json.dumps(documents, indent=2))
 
     def main(self):
