@@ -14,7 +14,6 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const env: string = ((props && props.env) ?? '') as string;
     const promptManager = new PromptManager();
 
-    // const modelId: ModelId = 'anthropic.claude-3-haiku-20240307-v1:0';
     // const modelId: ModelId = 'anthropic.claude-3-5-haiku-20241022-v1:0';
     // const modelId: ModelId = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
     const modelId : ModelId = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
@@ -22,18 +21,19 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     // ----------------- Python Coder Agent の実装例 -----------------
     // Action Group だけで完結する例
     // ユーザーは処理を自然言語で記述するだけで、コードとテストコードとテスト結果まで返す
+    const BASE_AGENT_NAME:string = 'python-coder';
+
     const pythonCoderActionGroup = new ActionGroup(this, 'PythonCoderActionGroup', {
       openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/python-coder/lambda/',
-      actionGroupName: 'tester',
+      actionGroupName: `${env}${BASE_AGENT_NAME}`,
     })
 
-    const pythonCoderAgentName = 'python-coder';
     const pythonCoderAgent:Agent = new Agent(this, 'PythonCoderAgent', {
       env: env,
       accountId: accountId,
       region: region,
-      name: pythonCoderAgentName,
+      name: BASE_AGENT_NAME,
       modelId: modelId,
       actionGroups: [
         pythonCoderActionGroup,
@@ -42,11 +42,11 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       codeInterpreter: true,
       description: `python coder agent`,
       prompts: {
-        instruction: promptManager.getPrompts(modelId, pythonCoderAgentName).instruction,
+        instruction: promptManager.getPrompts(modelId, BASE_AGENT_NAME).instruction,
         PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
         ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
         KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
-        POST_PROCESSING: promptManager.getPrompts(modelId, pythonCoderAgentName).postProcessing
+        POST_PROCESSING: promptManager.getPrompts(modelId, BASE_AGENT_NAME).postProcessing
       },
     });
 
@@ -54,7 +54,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, `${pythonCoderAgent.agentName}AgentId`, {
       value: JSON.stringify({
-        agentName: pythonCoderAgentName,
+        agentName: pythonCoderAgent.agentName,
         agentId: pythonCoderAgent.agentId,
         agentAliasId: pythonCoderAgent.agentAriasId,
       }),
@@ -63,18 +63,19 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
 
     // ----------------- 人事の Agent 実装例 -----------------
-    const hrAgentName = 'hr-agent';
+    const BASE_HR_AGENT_NAME:string = 'human-resource-agent';
+    
     const hrKnowledgeBase = new KnowledgeBase(this, 'HumanResourceKnowledgeBase', {
       env: env,
       region: region,
       dataSources: [
         {
           dataDir:'./data-source/hr',
-          name: 'human-resource-data-source',
+          name: BASE_HR_AGENT_NAME,
           description: 'Human resource data source',
         }
       ],
-      name: 'human-resource-knowledge-base',
+      name: BASE_HR_AGENT_NAME,
       description: 'Human resource knowledge base',
       embeddingModelId: 'amazon.titan-embed-text-v2:0'
     });
@@ -82,7 +83,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const hrActionGroup = new ActionGroup(this, 'HumanResourceActionGroup', {
       openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/hr/lambda/',
-      actionGroupName: 'action-group-sample',
+      actionGroupName: BASE_HR_AGENT_NAME,
       // lambda がほかのリソースにアクセスする場合に記述する
       // lambdaPolicy: new cdk.aws_iam.PolicyStatement({...})
     })
@@ -91,7 +92,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       env: env,
       accountId: accountId,
       region: region,
-      name: hrAgentName,
+      name: BASE_HR_AGENT_NAME,
       modelId: modelId,
       actionGroups: [
         hrActionGroup,
@@ -100,9 +101,9 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       codeInterpreter: true,
       description: `Human resource agent sample`,
       prompts: {
-        instruction: promptManager.getPrompts(modelId, hrAgentName).instruction,
+        instruction: promptManager.getPrompts(modelId, BASE_HR_AGENT_NAME).instruction,
         PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
-        ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+        ORCHESTRATION: promptManager.getPrompts(modelId, BASE_HR_AGENT_NAME).orchestration,
         KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
         POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
       },
@@ -116,7 +117,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, `${hrAgent.agentName}AgentId`, {
       value: JSON.stringify({
-        agentName: hrAgentName,
+        agentName: hrAgent.agentName,
         agentId: hrAgent.agentId,
         agentAliasId: hrAgent.agentAriasId,
         knowledgeBaseId: hrKnowledgeBase.knowledgeBaseId,
@@ -126,8 +127,8 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     });
 
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
+    const BASE_PS_AGENT_NAME:string = 'product-support-agent';
 
-    const supportAgentName = 'product-support-agent'
     const supportKnowledgeBase = new KnowledgeBase(this, 'SupportKnowledgeBase', {
       env: env,
       region: region,
@@ -138,22 +139,21 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           description: 'Support data source sample',
         }
       ],
-      name: 'support-knowledge-base-sample',
+      name: BASE_PS_AGENT_NAME,
       description: 'Support knowledge base sample',
       embeddingModelId: 'amazon.titan-embed-text-v2:0'
     });
     const supportActionGroup = new ActionGroup(this, 'SupportActionGroup', {
       openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/product-support/lambda/',
-      actionGroupName: 'support-action-group-sample'
+      actionGroupName: BASE_PS_AGENT_NAME
     })
 
     const supportAgent = new Agent(this, 'SupportAgent', {
-    
       env: env,
       accountId: accountId,
       region: region,
-      name: supportAgentName,
+      name: BASE_PS_AGENT_NAME,
       modelId: modelId,
       actionGroups: [
         supportActionGroup,
@@ -162,7 +162,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       codeInterpreter: true,
       description: `Support agent sample`,
       prompts: {
-        instruction: promptManager.getPrompts(modelId, supportAgentName).instruction,
+        instruction: promptManager.getPrompts(modelId, BASE_PS_AGENT_NAME).instruction,
         PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
         ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
         KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
@@ -171,14 +171,14 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       knowledgeBases:[
         {
           knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,
-          description: 'support-kb'
+          description: 'product-support-kb'
         }
       ]
     });
 
     new cdk.CfnOutput(this, `${supportAgent.agentName}AgentId`, {
       value: JSON.stringify({
-        agentName: supportAgentName,
+        agentName: supportAgent.agentName,
         agentId: supportAgent.agentId,
         agentAliasId: supportAgent.agentAriasId,
         knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,

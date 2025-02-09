@@ -1,6 +1,7 @@
 import boto3
 import json
 from uuid import uuid4
+from time import sleep
 
 brar = boto3.client('bedrock-agent-runtime')
 
@@ -8,12 +9,13 @@ brar = boto3.client('bedrock-agent-runtime')
 def main():
     with open('agent_ids.json', 'rt', encoding='utf-8') as f:
         documents = json.load(f)
-    prompts = [
-        'フィボナッチ数列を列挙するコード',
-        # 'Kazuhito Go の年休付与日数は？ただし現在は 2025/1/31 です。',
-        # 'E-03',
-    ]
-    for doc, prompt in zip(documents, prompts):
+    prompts = {
+        'dev-human-resource-agent': 'Kazuhito Go という社員の年休付与日数は？今日の日付も合わせて調べて。',
+        'dev-product-support-agent': 'E-03',
+        'dev-python-coder': 'フィボナッチ数列を列挙するコード',
+    }
+    for doc in documents:
+        prompt = prompts[doc['agentName']]
         print(f'user: {prompt}')
         response = brar.invoke_agent(
             agentId=doc['agentId'],
@@ -41,6 +43,7 @@ def main():
                         if "rationale" in orch_trace:
                             print(f"Rationale: {orch_trace['rationale'].get('text')}")
         print(f'AI: {completion}')
+        sleep(10)
 
 
 if __name__ == '__main__':
