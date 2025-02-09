@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "cdk": "cdk",
-    "cdk:deploy": "cd custom-resources && npm ci && cd .. && cdk deploy --require-approval never --asset-parallelism --asset-prebuild=false --concurrency 3 --method=direct",
+    "cdk:deploy": "cdk deploy --require-approval never --asset-parallelism --asset-prebuild=false --concurrency 3 --method=direct",
     "cdk:destroy": "cdk destroy --force"
   },
   "devDependencies": {

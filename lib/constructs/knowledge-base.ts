@@ -68,7 +68,7 @@ export class KnowledgeBase extends Construct {
     knowledgeBaseRole.grantRead(knowledgeBaseCollection.collectionArn)
 
     const knowledgeBase = new bedrock.CfnKnowledgeBase(this, `${props.env}KnowledgeBase`, {
-      name: props.name,
+      name: `${props.env}${props.name}`,
       roleArn: knowledgeBaseRole.arn,
       knowledgeBaseConfiguration: {
         type: 'VECTOR',
@@ -114,7 +114,7 @@ export class KnowledgeBase extends Construct {
           },
         },
         knowledgeBaseId: knowledgeBase.attrKnowledgeBaseId,
-        name: dataSource.name,
+        name: `${props.env}${dataSource.name}`,
         description: dataSource.description || ''
       }).attrDataSourceId);
     }

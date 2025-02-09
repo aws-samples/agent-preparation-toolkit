@@ -1,0 +1,84 @@
+openapi: 3.0.0
+info:
+  title: 'Code Test'
+  version: 1.0.0
+  description: "APIs for Python Coder"
+paths:
+  /code/test:
+    get:
+      summary: 'code test'
+      description: "If you provide Python code and its test code, it will run the test code. The test code must use pytest."
+      operationId: "code-test"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: code
+          in: query
+          description: 'Code to be tested'
+          required: true
+          schema:
+            type: string
+            example: "def hello_world():\n      return 'Hello, World!'"
+        - name: test_code
+          in: query
+          description: 'Test code'
+          required: true
+          schema:
+            type: string
+            example: "from main import hello_world\ndef test_hello_world():\n    assert hello_world() == 'Hello, World!'"
+      responses:
+        '200':
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [success, failure, error]
+                      message:
+                        type: string
+                      exitCode:
+                        type: integer
+                      output:
+                        type: string
+                        description: "Test execution output"
+                      error:
+                        type: string
+                        description: "Error messages and test failure details"
+                      executionTime:
+                        type: string
+                        description: "Test execution time in seconds"
+                      code:
+                        type: string
+                        description: "Original code that was tested"
+                      test_code:
+                        type: string
+                        description: "Test code that was executed"
+              example:
+                result:
+                  status: "success"
+                  message: "All tests passed!"
+                  exitCode: 0
+                  output: "test_main.py::test_hello_world PASSED"
+                  error: ""
+                  code: "def hello_world():\n    return 'Hello, World!'"
+                  test_code: "from main import hello_world\ndef test_hello_world():\n    assert hello_world() == 'Hello, World!'"
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  traceback:
+                    type: string
+                    description: "Detailed error traceback"
+              example:
+                error: "Failed to execute tests"
+                traceback: "Traceback (most recent call last):..."

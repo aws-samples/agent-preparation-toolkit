@@ -3,8 +3,8 @@ import { Construct } from 'constructs';
 import { Agent } from './constructs/agent';
 import { KnowledgeBase } from './constructs/knowledge-base';
 import { ActionGroup } from './constructs/action-group';
-import { Prompts } from './prompts/prompts';
-import { ModelId } from './types/agent';
+import { PromptManager } from './prompts/prompt-manager';
+import { ModelId } from './types/model';
 
 export class AgentPreparationToolkitStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -12,21 +12,58 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const accountId = cdk.Stack.of(this).account;
     const region = cdk.Stack.of(this).region;
     const env: string = ((props && props.env) ?? '') as string;
-    
-    const modelId: ModelId = 'anthropic.claude-3-haiku-20240307-v1:0'; // anthropic.claude-3-5-sonnet-20240620-v1:0
+    const promptManager = new PromptManager();
+
+    // const modelId: ModelId = 'anthropic.claude-3-5-haiku-20241022-v1:0';
+    // const modelId: ModelId = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+    const modelId : ModelId = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
 
     // ----------------- Python Coder Agent の実装例 -----------------
     // Action Group だけで完結する例
     // ユーザーは処理を自然言語で記述するだけで、コードとテストコードとテスト結果まで返す
-    // const pythonCoderActionGroup = new ActionGroup(this, 'PythonCoderActionGroup', {
-    //   openApiSchemaPath: './action-groups/python-coder/schema/api-schema.json',
-    //   lambdaFunctionPath: './action-groups/python-coder/lambda/',
-    //   actionGroupName: 'action-group-sample',
-    // })
+    const BASE_AGENT_NAME:string = 'python-coder';
 
-    
-    
+    const pythonCoderActionGroup = new ActionGroup(this, 'PythonCoderActionGroup', {
+      openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
+      lambdaFunctionPath: './action-groups/python-coder/lambda/',
+      actionGroupName: `${env}${BASE_AGENT_NAME}`,
+    })
+
+    const pythonCoderAgent:Agent = new Agent(this, 'PythonCoderAgent', {
+      env: env,
+      accountId: accountId,
+      region: region,
+      name: BASE_AGENT_NAME,
+      modelId: modelId,
+      actionGroups: [
+        pythonCoderActionGroup,
+      ],
+      userInput: true,
+      codeInterpreter: true,
+      description: `python coder agent`,
+      prompts: {
+        instruction: promptManager.getPrompts(modelId, BASE_AGENT_NAME).instruction,
+        PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+        ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+        KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+        POST_PROCESSING: promptManager.getPrompts(modelId, BASE_AGENT_NAME).postProcessing
+      },
+    });
+
+    pythonCoderAgent.node.addDependency(pythonCoderActionGroup.bucketDeployment);
+
+    new cdk.CfnOutput(this, `${pythonCoderAgent.agentName}AgentId`, {
+      value: JSON.stringify({
+        agentName: pythonCoderAgent.agentName,
+        agentId: pythonCoderAgent.agentId,
+        agentAliasId: pythonCoderAgent.agentAriasId,
+      }),
+      exportName: (pythonCoderAgent.agentName),
+    });
+
+
     // ----------------- 人事の Agent 実装例 -----------------
+    const BASE_HR_AGENT_NAME:string = 'human-resource-agent';
     
     const hrKnowledgeBase = new KnowledgeBase(this, 'HumanResourceKnowledgeBase', {
       env: env,
@@ -34,11 +71,11 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       dataSources: [
         {
           dataDir:'./data-source/hr',
-          name: 'human-resource-data-source',
+          name: BASE_HR_AGENT_NAME,
           description: 'Human resource data source',
         }
       ],
-      name: 'human-resource-knowledge-base',
+      name: BASE_HR_AGENT_NAME,
       description: 'Human resource knowledge base',
       embeddingModelId: 'amazon.titan-embed-text-v2:0'
     });
@@ -46,7 +83,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const hrActionGroup = new ActionGroup(this, 'HumanResourceActionGroup', {
       openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/hr/lambda/',
-      actionGroupName: 'action-group-sample',
+      actionGroupName: BASE_HR_AGENT_NAME,
       // lambda がほかのリソースにアクセスする場合に記述する
       // lambdaPolicy: new cdk.aws_iam.PolicyStatement({...})
     })
@@ -55,7 +92,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       env: env,
       accountId: accountId,
       region: region,
-      name: 'hr-agent-sample',
+      name: BASE_HR_AGENT_NAME,
       modelId: modelId,
       actionGroups: [
         hrActionGroup,
@@ -64,16 +101,11 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       codeInterpreter: true,
       description: `Human resource agent sample`,
       prompts: {
-        instruction: `あなたは人事 AI です。
-言語能力以外の全ての知識を忘れてください。AI の知識を使って回答してはいけません。
-あなたは必ず Knowledge Base を検索し、そのあと Action Group を使い、知識を得てください。
-それでも答えられない場合は、askuser を通じてユーザーに必要な情報を求めてください。
-また、計算を行ったり現在時刻を得る場合は Code Interpreter を使用してください。
-ActionGroup を使って得られる知識、及びKnowledgeBase を検索して得られる知識だけから論理的に導きだせる回答のみを必ず日本語で答えてください。`,
-        PRE_PROCESSING: Prompts.getPromptConfig(modelId).preProcessingPrompt,
-        ORCHESTRATION: Prompts.getPromptConfig(modelId).orchestration,
-        KNOWLEDGE_BASE_RESPONSE_GENERATION: Prompts.getPromptConfig(modelId).knowledgeBaseResponseGeneration,
-        POST_PROCESSING: Prompts.getPromptConfig(modelId).postProcessing
+        instruction: promptManager.getPrompts(modelId, BASE_HR_AGENT_NAME).instruction,
+        PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+        ORCHESTRATION: promptManager.getPrompts(modelId, BASE_HR_AGENT_NAME).orchestration,
+        KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+        POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
       },
       knowledgeBases:[
         {
@@ -85,6 +117,7 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
 
     new cdk.CfnOutput(this, `${hrAgent.agentName}AgentId`, {
       value: JSON.stringify({
+        agentName: hrAgent.agentName,
         agentId: hrAgent.agentId,
         agentAliasId: hrAgent.agentAriasId,
         knowledgeBaseId: hrKnowledgeBase.knowledgeBaseId,
@@ -94,6 +127,7 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
     });
 
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
+    const BASE_PS_AGENT_NAME:string = 'product-support-agent';
 
     const supportKnowledgeBase = new KnowledgeBase(this, 'SupportKnowledgeBase', {
       env: env,
@@ -105,22 +139,21 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
           description: 'Support data source sample',
         }
       ],
-      name: 'support-knowledge-base-sample',
+      name: BASE_PS_AGENT_NAME,
       description: 'Support knowledge base sample',
       embeddingModelId: 'amazon.titan-embed-text-v2:0'
     });
     const supportActionGroup = new ActionGroup(this, 'SupportActionGroup', {
       openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
       lambdaFunctionPath: './action-groups/product-support/lambda/',
-      actionGroupName: 'support-action-group-sample'
+      actionGroupName: BASE_PS_AGENT_NAME
     })
 
     const supportAgent = new Agent(this, 'SupportAgent', {
-    
       env: env,
       accountId: accountId,
       region: region,
-      name: 'support-agent-sample',
+      name: BASE_PS_AGENT_NAME,
       modelId: modelId,
       actionGroups: [
         supportActionGroup,
@@ -129,24 +162,23 @@ ActionGroup を使って得られる知識、及びKnowledgeBase を検索して
       codeInterpreter: true,
       description: `Support agent sample`,
       prompts: {
-        instruction: `あなたはプリンターの対応マンです。
-ユーザーはエラーコードを与えます。KnowledgeBase からエラーコードの詳細を取り、ActionGroup からそのエラーコードのサポート履歴を取得し、ユーザーに何をすべきかを提案してください。
-ただし回答は**必ず日本語で**答えてください。`,
-        PRE_PROCESSING: Prompts.getPromptConfig(modelId).preProcessingPrompt,
-        ORCHESTRATION: Prompts.getPromptConfig(modelId).orchestration,
-        KNOWLEDGE_BASE_RESPONSE_GENERATION: Prompts.getPromptConfig(modelId).knowledgeBaseResponseGeneration,
-        POST_PROCESSING: Prompts.getPromptConfig(modelId).postProcessing
+        instruction: promptManager.getPrompts(modelId, BASE_PS_AGENT_NAME).instruction,
+        PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+        ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+        KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+        POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
       },
       knowledgeBases:[
         {
           knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,
-          description: 'support-kb'
+          description: 'product-support-kb'
         }
       ]
     });
 
     new cdk.CfnOutput(this, `${supportAgent.agentName}AgentId`, {
       value: JSON.stringify({
+        agentName: supportAgent.agentName,
         agentId: supportAgent.agentId,
         agentAliasId: supportAgent.agentAriasId,
         knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,

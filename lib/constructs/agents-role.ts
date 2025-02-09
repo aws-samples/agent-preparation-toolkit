@@ -7,7 +7,7 @@ export interface AgentRoleProps{
   accountId: string;
   region: string;
   agentName: string;
-  knowledgeBaseIds: string[];
+  knowledgeBaseIds?: string[];
   roleName: string;
   lambdaFunctions: lambda.Function[];
   s3Buckets: s3.Bucket[];
@@ -27,16 +27,22 @@ export class AgentRole extends Construct {
             `arn:aws:bedrock:${props.region}::foundation-model/*`
           ]
         }),
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: [
-            'bedrock:Retrieve',
-            'bedrock:RetrieveAndGenerate'
-          ],
-          resources: props.knowledgeBaseIds.map(id =>
-            `arn:aws:bedrock:${props.region}:${props.accountId}:knowledge-base/${id}`
-          )
-        }),
+        // knowledgeBaseIdsが存在する場合のみ、このポリシーステートメントを追加
+        ...(props.knowledgeBaseIds && props.knowledgeBaseIds.length > 0 
+          ? [
+              new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                  'bedrock:Retrieve',
+                  'bedrock:RetrieveAndGenerate'
+                ],
+                resources: props.knowledgeBaseIds.map(id =>
+                  `arn:aws:bedrock:${props.region}:${props.accountId}:knowledge-base/${id}`
+                )
+              })
+            ]
+          : []
+        )
       ]
     });
 
