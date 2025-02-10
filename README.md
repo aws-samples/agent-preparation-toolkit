@@ -116,6 +116,11 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
 GenU の `./packages/cdk/parameter.ts` もしくは `./packages/cdk/cdk.json` の agents パラメータの配列の中に json ファイルの中身を格納してください。  
 詳細は [手動で作成した Agent を追加](https://github.com/aws-samples/generative-ai-use-cases-jp/blob/main/docs/DEPLOY_OPTION.md#%E6%89%8B%E5%8B%95%E3%81%A7%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F-agent-%E3%82%92%E8%BF%BD%E5%8A%A0) を参照ください。
 
+## Bedrock Engineer 連携
+
+開発に利用できる AI エージェント Bedrock Engineer を GUI とすることもできます。  
+[ツールの設定](https://github.com/aws-samples/bedrock-engineer?tab=readme-ov-file#select-tools--customize-tools) から APT で作成した Bedrock Agent の agent id と alias id を指定してください。
+
 ## 削除
 以下コマンドで削除してください。  
 
