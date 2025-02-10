@@ -23,7 +23,7 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 git clone https://github.com/aws-samples/agent-preparation-toolkit
 
 # カレントディレクトリをリポジトリに移す
-cd agent-build-kit
+cd agent-preparation-toolkit
 
 # パッケージのインストール
 npm install && cd custom-resources && npm ci && cd ..
