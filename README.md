@@ -45,7 +45,8 @@ python 2_invoke.py
 ## プリセットの Agents
 
 これらの Agent は `lib/agents-preparation-toolkit-stack.ts` の各 Agent 定義部分をコメントアウトすることでそれぞれ無効化することができます。  
-必要なものだけをご利用ください。
+必要なものだけをご利用ください。  
+また、裏側で動く **Action Group (AWS Lambda) のコード や Knowledge Base のデータを差し替えるだけで自社用の Agent にする**ことができます。
 
 ### Python Coder
 ユーザーは Python Coder にコーディングして欲しい内容を与えると、Python Coder は自分でコードを書き、自動でテストし、コードとテスト結果を返します。  
@@ -55,6 +56,15 @@ python 2_invoke.py
 コードは単一ファイルで実行できる前提で、リポジトリ丸ごと作成する処理はできません。
 ![python-coder-architecture](./image/python-coder.png)
 
+カスタマイズする場合のメインのカスタマイズ箇所は以下です。
+* [AWS リソース定義](./lib/agents-preparation-toolkit-stack.ts) の `const BASE_AGENT_NAME:string = 'python-coder';` 以下
+* Action Group
+  * [Lambda 関数](./action-groups/python-coder/lambda/index.py)
+  * [OpenAPI スキーマ](./action-groups/python-coder/schema/api-schema.yaml)
+* プロンプト
+  * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
+  * [Python Coder 用プロンプト](./lib/prompts/custom-prompts.ts)
+
 ### Human Resource Agent
 Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く SQLite) に社員の入社日が格納されています。  
 各社員の今年の年休付与日数を問い合わせることができます。
@@ -62,12 +72,33 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
 ![human-resource-sample](./image/human-resource-sample.png)
 ![human-resource-agent-architecture](./image/human-resource-agent.png)
 
+カスタマイズする場合のメインのカスタマイズ箇所は以下です。
+* [AWS リソース定義](./lib/agents-preparation-toolkit-stack.ts) の `const BASE_HR_AGENT_NAME:string = 'human-resource-agent';` 以下
+* Action Group
+  * [Lambda 関数](./action-groups/hr/lambda/index.py)
+  * [OpenAPI スキーマ](./action-groups/hr/schema/api-schema.yaml)
+* [Knowledge Base のデータソース](./data-source/hr/)
+* プロンプト
+  * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
+  * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
+
 ### Product Support Agent
 プリンタのエラーコードを持つ Knowledge Base と、Database (Lambda 内で動く SQLite) にエラーコードごとの対応履歴が格納されています。  
 エラーコードを与えるとどんなことをすれば直る可能性があるかを教えてくれます。
 試しに `E-03` と検索すると、過去の E-03 の詳細及び過去の対応から何をすればいいかを出力します。
 ![product-support-sample](./image/product-support-sample.png)
 ![human-resource-agent-architecture](./image/product-support-agent.png)
+
+カスタマイズする場合のメインのカスタマイズ箇所は以下です。
+* [AWS リソース定義](./lib/agents-preparation-toolkit-stack.ts) の `const BASE_PS_AGENT_NAME:string = 'product-support-agent';` 以下
+* Action Group
+  * [Lambda 関数](./action-groups/product-support/lambda/index.py)
+  * [OpenAPI スキーマ](./action-groups/product-support/schema/api-schema.yaml)
+* [Knowledge Base のデータソース](./data-source/product-support/)
+* プロンプト
+  * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
+  * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
+
 
 > [!IMPORTANT]
 > Human Resource Agent 及び Product Support Agent には Amazon Bedrock Agents で LLM が SQL を考えて Action Group に登録されている AWS Lambda の Lambda 関数が SQL を実行する仕組みが入っています。  
