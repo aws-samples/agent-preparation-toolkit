@@ -12,3 +12,6 @@ genu.json
 
 __pycache__/*
 image/~$architecture.pptx
+
+# Python Coder のモジュールは無視
+action-groups/python-coder/lambda/lib

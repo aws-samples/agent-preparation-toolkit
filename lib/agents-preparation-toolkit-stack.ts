@@ -110,7 +110,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       knowledgeBases:[
         {
           knowledgeBaseId: hrKnowledgeBase.knowledgeBaseId,
-          description: 'human-resource-kb'
+          description: '人事規則が格納されている KnowledgeBase'
         }
       ]
     });
@@ -171,7 +171,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       knowledgeBases:[
         {
           knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,
-          description: 'product-support-kb'
+          description: 'エラーコードとその詳細が格納されている KnowledgeBase'
         }
       ]
     });
