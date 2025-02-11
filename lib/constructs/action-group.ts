@@ -4,7 +4,6 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
-import * as fs from 'fs';
 import { BucketDeployment } from './bucket-deployment';
 
 type OpenApiPath = `${string}.json` | `${string}.yaml`;
@@ -51,29 +50,18 @@ export class ActionGroup extends Construct {
       this.lambdaRole.addToPolicy(props.lambdaPolicy);
     }
 
-    const requirementsPath = path.join(props.lambdaFunctionPath, 'requirements.txt');
-    const hasRequirements = fs.existsSync(requirementsPath);
-
     this.lambdaFunction = new lambda.Function(this, 'Function', {
       runtime: lambda.Runtime.PYTHON_3_13,
       code: lambda.Code.fromAsset(path.join(props.lambdaFunctionPath),{
-        ...(hasRequirements
-          ? {
-              bundling: {
-                image: lambda.Runtime.PYTHON_3_13.bundlingImage,
-                command: [
-                  'bash', '-c',
-                  'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
-                ],
-              }
-            }
-          : {}),
-        exclude: ['venv', '__pycache__', '.mypy_cache', '.pytest_cache', '.venv', 'node_modules', '.git', 'cdk.out', 'docs', 'tests'],
+        exclude:['venv', '__pycache__', '.mypy_cache', '.pytest_cache', '.venv', 'node_modules', '.git', 'cdk.out', 'docs', 'tests']
       }),
       handler: 'index.lambda_handler',
       memorySize: 256,
       timeout: cdk.Duration.seconds(30),
-      role: this.lambdaRole
+      role: this.lambdaRole,
+      environment: {
+        PYTHONPATH: '/var/task/lib'
+      }
     });
 
     new iam.ManagedPolicy(this, 'LambdaPolicy', {
