@@ -70,7 +70,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       region: region,
       dataSources: [
         {
-          dataDir:'./data-source/hr',
+          dataDir:'./data-source/hr/vacation.md',
           name: BASE_HR_AGENT_NAME,
           description: 'Human resource data source',
         }
@@ -134,7 +134,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       region: region,
       dataSources: [
         {
-          dataDir:'./data-source/product-support',
+          dataDir:'./data-source/product-support/error_code.md',
           name: 'support-data-source-sample',
           description: 'Support data source sample',
         }
