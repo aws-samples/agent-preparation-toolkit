@@ -5,7 +5,6 @@ import { Construct } from 'constructs';
 import { KnowledgeBase } from './knowledge-base';
 import { ActionGroup } from './action-group';
 import { Agent } from './agent';
-import { PromptManager } from '../prompts/prompt-manager';
 import { ModelId } from '../types/model';
 import { EmbeddingModelId } from '../types/model'
 import { OpenApiPath } from '../types';
@@ -21,7 +20,13 @@ export interface AgentBuilderProps {
   region: string;
   accountId: string;
   modelId: ModelId;
-  promptManager: PromptManager;
+  prompts: {
+    instruction: string;
+    PRE_PROCESSING: string;
+    ORCHESTRATION: string;
+    KNOWLEDGE_BASE_RESPONSE_GENERATION: string;
+    POST_PROCESSING: string;
+  };
   agentName: string;
   knowledgeBaseConfig: {
     dataSources: DataSourceConfig[];
@@ -79,13 +84,7 @@ export class AgentBuilder extends Construct {
       userInput: props.agentConfig.userInput,
       codeInterpreter: props.agentConfig.codeInterpreter,
       description: props.agentConfig.description,
-      prompts: {
-        instruction: props.promptManager.getPrompts(props.modelId, props.agentName).instruction,
-        PRE_PROCESSING: props.promptManager.getPrompts(props.modelId).preProcessing,
-        ORCHESTRATION: props.promptManager.getPrompts(props.modelId, props.agentName).orchestration,
-        KNOWLEDGE_BASE_RESPONSE_GENERATION: props.promptManager.getPrompts(props.modelId).knowledgeBaseResponseGeneration,
-        POST_PROCESSING: props.promptManager.getPrompts(props.modelId).postProcessing
-      },
+      prompts: props.prompts,
       knowledgeBases: [
         {
           knowledgeBaseId: this.knowledgeBase.knowledgeBaseId,

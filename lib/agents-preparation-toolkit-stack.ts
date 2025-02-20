@@ -64,22 +64,29 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
 
     // ----------------- 人事の Agent 実装例 -----------------
+    const hrAgentName:string = 'human-resource-agent';
     const hrAgent = new AgentBuilder(this, 'HRAgent', {
       env: env,
       region: region,
       accountId: accountId,
       modelId: modelId,
-      promptManager: promptManager,
-      agentName: 'human-resource-agent',
+      prompts: {
+        instruction: promptManager.getPrompts(modelId, hrAgentName).instruction,
+        PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+        ORCHESTRATION: promptManager.getPrompts(modelId, hrAgentName).orchestration,
+        KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+        POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
+      },
+      agentName: hrAgentName,
       knowledgeBaseConfig: {
         dataSources: [
           {
             dataDir: './data-source/hr/vacation.md',
-            name: 'human-resource-agent',
+            name: hrAgentName,
             description: 'Human resource data source',
           }
         ],
-        name: 'human-resource-agent',
+        name: hrAgentName,
         description: 'Human resource knowledge base',
         embeddingModelId: 'amazon.titan-embed-text-v2:0'
       },
@@ -96,64 +103,42 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     });
 
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
-    const BASE_PS_AGENT_NAME:string = 'product-support-agent';
-
-    const supportKnowledgeBase = new KnowledgeBase(this, 'SupportKnowledgeBase', {
+    const productSupportAgentName:string = 'product-support-agent';
+    const productSupportAgent = new AgentBuilder(this, 'ProductSupportAgent', {
       env: env,
       region: region,
-      dataSources: [
-        {
-          dataDir:'./data-source/product-support/error_code.md',
-          name: 'support-data-source-sample',
-          description: 'Support data source sample',
-        }
-      ],
-      name: BASE_PS_AGENT_NAME,
-      description: 'Support knowledge base sample',
-      embeddingModelId: 'amazon.titan-embed-text-v2:0'
-    });
-    const supportActionGroup = new ActionGroup(this, 'SupportActionGroup', {
-      openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
-      lambdaFunctionPath: './action-groups/product-support/lambda/',
-      actionGroupName: BASE_PS_AGENT_NAME
-    })
-
-    const supportAgent = new Agent(this, 'SupportAgent', {
-      env: env,
       accountId: accountId,
-      region: region,
-      name: BASE_PS_AGENT_NAME,
       modelId: modelId,
-      actionGroups: [
-        supportActionGroup,
-      ],
-      userInput: true,
-      codeInterpreter: true,
-      description: `Support agent sample`,
       prompts: {
-        instruction: promptManager.getPrompts(modelId, BASE_PS_AGENT_NAME).instruction,
+        instruction: promptManager.getPrompts(modelId, productSupportAgentName).instruction,
         PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
         ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
         KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
         POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
       },
-      knowledgeBases:[
-        {
-          knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,
-          description: 'エラーコードとその詳細が格納されている KnowledgeBase'
-        }
-      ]
-    });
-
-    new cdk.CfnOutput(this, `${supportAgent.agentName}AgentId`, {
-      value: JSON.stringify({
-        agentName: supportAgent.agentName,
-        agentId: supportAgent.agentId,
-        agentAliasId: supportAgent.agentAriasId,
-        knowledgeBaseId: supportKnowledgeBase.knowledgeBaseId,
-        DataSourceId: supportKnowledgeBase.dataSourceIds
-      }),
-      exportName: (supportAgent.agentName),
+      agentName: productSupportAgentName,
+      knowledgeBaseConfig: {
+        dataSources: [
+          {
+            dataDir: './data-source/product-support/error_code.md',
+            name: productSupportAgentName,
+            description: 'Support data source sample',
+          }
+        ],
+        name: productSupportAgentName,
+        description: 'Support knowledge base sample',
+        embeddingModelId: 'amazon.titan-embed-text-v2:0'
+      },
+      actionGroupConfig: {
+        openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
+        lambdaFunctionPath: './action-groups/product-support/lambda/',
+      },
+      agentConfig: {
+        description: 'Support agent sample',
+        userInput: true,
+        codeInterpreter: false,
+        knowledgeBaseDescription: 'エラーコードとその詳細が格納されている KnowledgeBase'
+      }
     });
 
     // スタック名の出力
