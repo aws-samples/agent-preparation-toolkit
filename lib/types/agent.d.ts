@@ -1,0 +1,1 @@
+export type OpenApiPath = `${string}.json` | `${string}.yaml`;
