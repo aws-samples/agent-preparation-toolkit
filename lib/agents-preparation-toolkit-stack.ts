@@ -34,8 +34,8 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       },
       agentName: PythonCoderName,
       actionGroupConfig: {
-        openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
-        lambdaFunctionPath: './action-groups/hr/lambda/',
+        openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
+        lambdaFunctionPath: './action-groups/python-coder/lambda/',
       },
       agentConfig: {
         description: 'python coder agent sample',
@@ -68,7 +68,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           }
         ],
         name: hrAgentName,
-        description: 'Human resource knowledge base',
+        description: '人事規則が格納されている KnowledgeBase',
         embeddingModelId: 'amazon.titan-embed-text-v2:0'
       },
       actionGroupConfig: {
@@ -106,7 +106,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           }
         ],
         name: productSupportAgentName,
-        description: 'Support knowledge base sample',
+        description: 'エラーコードとその詳細が格納されている KnowledgeBase',
         embeddingModelId: 'amazon.titan-embed-text-v2:0'
       },
       actionGroupConfig: {

@@ -168,13 +168,13 @@ export class Agent extends Construct {
     }
 
     
-    const agentAlias = new bedrock.CfnAgentAlias(this, `${props.env}AgentAlias`, {
-      agentAliasName: 'v1',
-      agentId: agent.attrAgentId,
-    });
+    // new bedrock.CfnAgentAlias(this, `${props.env}AgentAlias`, {
+    //   agentAliasName: 'v1',
+    //   agentId: agent.attrAgentId,
+    // });
 
     this.agentName = agent.agentName
     this.agentId = agent.attrAgentId;
-    this.agentAriasId = agentAlias.attrAgentAliasId
+    this.agentAriasId = 'TSTALIASID'
   }
 }

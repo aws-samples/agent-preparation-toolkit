@@ -103,6 +103,10 @@ export class AgentBuilder extends Construct {
         agentName: this.agent.agentName,
         agentId: this.agent.agentId,
         agentAliasId: this.agent.agentAriasId,
+        ...(this.knowledgeBase && {
+          knowledgeBaseId: this.knowledgeBase.knowledgeBaseId,
+          DataSourceId: this.knowledgeBase.dataSourceIds,
+        }),
       }),
       exportName: (this.agent.agentName),
     });
