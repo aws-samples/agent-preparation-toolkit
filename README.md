@@ -32,10 +32,10 @@ npm run cdk:deploy
 
 # (待つ)
 # CDK の出力にあるStackName = の後ろの値をコピーする
-# 例: Dev-AgentPreparationToolkitStack.StackName = Dev-AgentPreparationToolkitStack
+# 例: Dev-AgentPreparationToolkitStack.StackName = dev-AgentPreparationToolkitStack
 
 # DataSource の同期 
-# {YOUR_STACK_NAME} には Dev-AgentPreparationToolkitStack などを入力
+# {YOUR_STACK_NAME} には dev-AgentPreparationToolkitStack などを入力
 python 1_sync.py -s {YOUR_STACK_NAME} # DataSource の同期が走る
 
 # Agent 呼び出しサンプル
