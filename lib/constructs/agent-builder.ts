@@ -28,7 +28,7 @@ export interface AgentBuilderProps {
     POST_PROCESSING: string;
   };
   agentName: string;
-  knowledgeBaseConfig: {
+  knowledgeBaseConfig?: {
     dataSources: DataSourceConfig[];
     name: string;
     description: string;
@@ -42,7 +42,6 @@ export interface AgentBuilderProps {
     description: string;
     userInput: boolean;
     codeInterpreter: boolean;
-    knowledgeBaseDescription: string;
   };
 }
 
@@ -55,14 +54,16 @@ export class AgentBuilder extends Construct {
     super(scope, id);
 
     // Knowledge Base の作成
-    this.knowledgeBase = new KnowledgeBase(this, 'KnowledgeBase', {
-      env: props.env,
-      region: props.region,
-      dataSources: props.knowledgeBaseConfig.dataSources,
-      name: props.knowledgeBaseConfig.name,
-      description: props.knowledgeBaseConfig.description,
-      embeddingModelId: props.knowledgeBaseConfig.embeddingModelId
-    });
+    if (props.knowledgeBaseConfig){
+      this.knowledgeBase = new KnowledgeBase(this, 'KnowledgeBase', {
+        env: props.env,
+        region: props.region,
+        dataSources: props.knowledgeBaseConfig.dataSources,
+        name: props.knowledgeBaseConfig.name,
+        description: props.knowledgeBaseConfig.description,
+        embeddingModelId: props.knowledgeBaseConfig.embeddingModelId
+      });
+    }
 
     // Action Group の作成
     this.actionGroup = new ActionGroup(this, 'ActionGroup', {
@@ -85,13 +86,16 @@ export class AgentBuilder extends Construct {
       codeInterpreter: props.agentConfig.codeInterpreter,
       description: props.agentConfig.description,
       prompts: props.prompts,
-      knowledgeBases: [
-        {
-          knowledgeBaseId: this.knowledgeBase.knowledgeBaseId,
-          description: props.agentConfig.knowledgeBaseDescription
-        }
-      ]
+      ...(props.knowledgeBaseConfig && {
+        knowledgeBases: [
+          {
+            knowledgeBaseId: this.knowledgeBase.knowledgeBaseId,
+            description: props.knowledgeBaseConfig.description,
+          }
+        ]
+      })
     });
+    this.agent.node.addDependency(this.actionGroup.bucketDeployment);
 
     // 出力の作成
     new cdk.CfnOutput(this, `${this.agent.agentName}AgentId`, {
@@ -99,8 +103,6 @@ export class AgentBuilder extends Construct {
         agentName: this.agent.agentName,
         agentId: this.agent.agentId,
         agentAliasId: this.agent.agentAriasId,
-        knowledgeBaseId: this.knowledgeBase.knowledgeBaseId,
-        DataSourceId: this.knowledgeBase.dataSourceIds
       }),
       exportName: (this.agent.agentName),
     });

@@ -24,7 +24,7 @@ export interface AgentProps {
   };
   readonly knowledgeBases?: [{
     knowledgeBaseId : string,
-    description: string,
+    description: string | undefined,
   }
   ];
 }
@@ -53,7 +53,7 @@ export class Agent extends Construct {
       instruction: props.prompts.instruction,
       knowledgeBases: props.knowledgeBases ? props.knowledgeBases.map(knowledgeBase => ({
         knowledgeBaseId: knowledgeBase.knowledgeBaseId,
-        description: knowledgeBase.description,
+        description: knowledgeBase.description || '',
       })) : [],
       foundationModel: props.modelId,
       idleSessionTtlInSeconds:600,

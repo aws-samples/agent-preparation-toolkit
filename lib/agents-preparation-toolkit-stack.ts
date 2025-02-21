@@ -1,8 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Agent } from './constructs/agent';
-import { KnowledgeBase } from './constructs/knowledge-base';
-import { ActionGroup } from './constructs/action-group';
 import { PromptManager } from './prompts/prompt-manager';
 import { ModelId } from './types/model';
 import { AgentBuilder } from './constructs/agent-builder';
@@ -16,56 +13,40 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const promptManager = new PromptManager();
 
     // const modelId: ModelId = 'anthropic.claude-3-5-haiku-20241022-v1:0';
-    // const modelId: ModelId = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
     const modelId : ModelId = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
 
     // ----------------- Python Coder Agent の実装例 -----------------
     // Action Group だけで完結する例
     // ユーザーは処理を自然言語で記述するだけで、コードとテストコードとテスト結果まで返す
-    const BASE_AGENT_NAME:string = 'python-coder';
 
-    const pythonCoderActionGroup = new ActionGroup(this, 'PythonCoderActionGroup', {
-      openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
-      lambdaFunctionPath: './action-groups/python-coder/lambda/',
-      actionGroupName: `${env}${BASE_AGENT_NAME}`,
-    })
-
-    const pythonCoderAgent:Agent = new Agent(this, 'PythonCoderAgent', {
+    const PythonCoderName = 'python-coder';
+    new AgentBuilder(this, 'PythonCoder', {
       env: env,
-      accountId: accountId,
       region: region,
-      name: BASE_AGENT_NAME,
+      accountId: accountId,
       modelId: modelId,
-      actionGroups: [
-        pythonCoderActionGroup,
-      ],
-      userInput: true,
-      codeInterpreter: true,
-      description: `python coder agent`,
       prompts: {
-        instruction: promptManager.getPrompts(modelId, BASE_AGENT_NAME).instruction,
+        instruction: promptManager.getPrompts(modelId, PythonCoderName).instruction,
         PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
         ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
         KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
-        POST_PROCESSING: promptManager.getPrompts(modelId, BASE_AGENT_NAME).postProcessing
+        POST_PROCESSING: promptManager.getPrompts(modelId, PythonCoderName).postProcessing
       },
+      agentName: PythonCoderName,
+      actionGroupConfig: {
+        openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
+        lambdaFunctionPath: './action-groups/hr/lambda/',
+      },
+      agentConfig: {
+        description: 'python coder agent sample',
+        userInput: true,
+        codeInterpreter: false,
+      }
     });
-
-    pythonCoderAgent.node.addDependency(pythonCoderActionGroup.bucketDeployment);
-
-    new cdk.CfnOutput(this, `${pythonCoderAgent.agentName}AgentId`, {
-      value: JSON.stringify({
-        agentName: pythonCoderAgent.agentName,
-        agentId: pythonCoderAgent.agentId,
-        agentAliasId: pythonCoderAgent.agentAriasId,
-      }),
-      exportName: (pythonCoderAgent.agentName),
-    });
-
 
     // ----------------- 人事の Agent 実装例 -----------------
-    const hrAgentName:string = 'human-resource-agent';
-    const hrAgent = new AgentBuilder(this, 'HRAgent', {
+    const hrAgentName = 'human-resource-agent';
+    new AgentBuilder(this, 'HRAgent', {
       env: env,
       region: region,
       accountId: accountId,
@@ -98,13 +79,12 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         description: 'Human resource agent sample',
         userInput: true,
         codeInterpreter: true,
-        knowledgeBaseDescription: '人事規則が格納されている KnowledgeBase'
       }
     });
 
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
-    const productSupportAgentName:string = 'product-support-agent';
-    const productSupportAgent = new AgentBuilder(this, 'ProductSupportAgent', {
+    const productSupportAgentName = 'product-support-agent';
+    new AgentBuilder(this, 'ProductSupportAgent', {
       env: env,
       region: region,
       accountId: accountId,
@@ -137,7 +117,6 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         description: 'Support agent sample',
         userInput: true,
         codeInterpreter: false,
-        knowledgeBaseDescription: 'エラーコードとその詳細が格納されている KnowledgeBase'
       }
     });
 
