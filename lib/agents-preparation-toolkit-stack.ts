@@ -3,6 +3,10 @@ import { Construct } from 'constructs';
 import { PromptManager } from './prompts/prompt-manager';
 import { ModelId } from './types/model';
 import { AgentBuilder } from './constructs/agent-builder';
+import * as glue from 'aws-cdk-lib/aws-glue';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as athena from 'aws-cdk-lib/aws-athena';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class AgentPreparationToolkitStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -119,6 +123,131 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         codeInterpreter: false,
       }
     });
+
+    // ----------------- Bedrock Logs Watcher の 実装例 -----------------
+
+    const bedrockLogsS3Uri = this.node.tryGetContext('bedrockLogsS3Uri');
+    if (bedrockLogsS3Uri && bedrockLogsS3Uri !== '') {
+      const queryResultsBucket = new s3.Bucket(this, 'AthenaQueryResultsBucket', {
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        enforceSSL: true,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        autoDeleteObjects: true,
+        serverAccessLogsPrefix: 'AccessLogs/',
+        lifecycleRules: [
+          {
+            expiration: cdk.Duration.days(7), // 7日後に古いクエリ結果を削除
+            prefix: 'query-results/' // クエリ結果のプレフィックスを指定
+          }
+        ]
+      });
+
+      const workGroup = new athena.CfnWorkGroup(this, 'BedrockLogsWorkgroup', {
+        name: 'bedrock-logs-workgroup',
+        description: 'Workgroup for querying Bedrock logs',
+        state: 'ENABLED',
+        workGroupConfiguration: {
+          resultConfiguration: {
+            outputLocation: `s3://${queryResultsBucket.bucketName}/query-results/`,
+            encryptionConfiguration: {
+              encryptionOption: 'SSE_S3'
+            }
+          },
+          enforceWorkGroupConfiguration: true,
+          publishCloudWatchMetricsEnabled: true,
+          engineVersion: {
+            selectedEngineVersion: 'Athena engine version 3'
+          }
+        },
+      });
+
+      const database = new glue.CfnDatabase(this, 'BedrockLogsDatabase', {
+        catalogId: accountId,
+        databaseInput: {
+          name: 'bedrock_logs_db',
+        },
+      });
+
+      // Glue Table の作成
+      new glue.CfnTable(this, 'BedrockLogsTable', {
+        catalogId: accountId,
+        databaseName: database.ref,
+        tableInput: {
+          name: 'bedrock_model_invocation_logs',
+          tableType: 'EXTERNAL_TABLE',
+          parameters: {
+            'classification': 'json'
+          },
+          storageDescriptor: {
+            location: bedrockLogsS3Uri,
+            inputFormat: 'org.apache.hadoop.mapred.TextInputFormat',
+            outputFormat: 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat',
+            compressed: false,
+            numberOfBuckets: 0,
+            serdeInfo: {
+              serializationLibrary: 'org.openx.data.jsonserde.JsonSerDe',
+              parameters: {
+                'ignore.malformed.json' : 'true'
+              }
+            },
+            sortColumns:[],
+            storedAsSubDirectories: false,
+            columns: [
+              { name: 'schematype', type: 'string' },
+              { name: 'schemaversion', type: 'string' },
+              { name: 'timestamp', type: 'timestamp' },
+              { name: 'accountid', type: 'string' },
+              { name: 'identity', type: 'struct<arn:string>' },
+              { name: 'region', type: 'string' },
+              { name: 'requestid', type: 'string' },
+              { name: 'operation', type: 'string' },
+              { name: 'modelid', type: 'string' },
+              { name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>'},
+              { name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>'},
+              { name: 'inferenceregion', type: 'string' }
+            ],
+          },
+          retention:0,
+          partitionKeys: [],
+        },
+      });
+      
+      const BedrockLogsWatcherName = 'bedrock-logs-watcher';
+      new AgentBuilder(this, 'BedrockLogsWatcher', {
+        env: env,
+        region: region,
+        accountId: accountId,
+        modelId: modelId,
+        prompts: {
+          instruction: promptManager.getPrompts(modelId, BedrockLogsWatcherName).instruction,
+          PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+          ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+          KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+          POST_PROCESSING: promptManager.getPrompts(modelId, PythonCoderName).postProcessing
+        },
+        agentName: BedrockLogsWatcherName,
+        actionGroupConfig: {
+          openApiSchemaPath: './action-groups/bedrock-logs-watcher/schema/api-schema.yaml',
+          lambdaFunctionPath: './action-groups/bedrock-logs-watcher/lambda/',
+          lambdaPolicy: new iam.PolicyStatement({
+            actions: [
+              'athena:StartQueryExecution',
+              'athena:GetQueryExecution',
+              'athena:GetQueryResults',
+            ],
+            resources: [
+              `arn:aws:athena:${region}:${accountId}:workgroup/${workGroup.name}`,
+            ]
+          })
+        },
+        agentConfig: {
+          description: 'bedrock logs watcher',
+          userInput: true,
+          codeInterpreter: true,
+        }
+      });
+    }
 
     // スタック名の出力
     new cdk.CfnOutput(this, 'StackName', {
