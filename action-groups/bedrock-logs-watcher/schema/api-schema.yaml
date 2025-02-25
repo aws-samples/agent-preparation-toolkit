@@ -7,7 +7,7 @@ paths:
   /select:
     get:
       summary: 'Bedrock Logs Query'
-      description: "Athena で Bedrock のログに SQL で問い合わせして csv で返す。使用できるテーブルは `bedrock_logs_db.bedrock_model_invocation_logs` のみで、使用できる列名は  { name: 'schematype', type: 'string', comment: '' },{ name: 'schemaversion', type: 'string', comment: '' },{ name: 'timestamp', type: 'timestamp', comment: '' },{ name: 'accountid', type: 'string', comment: '' },{ name: 'identity', type: 'struct<arn:string>', comment: 'IAM ユーザーもしくはロールの ARN が格納' },{ name: 'region', type: 'string', comment: 'API を呼び出したリージョン' },{ name: 'requestid', type: 'string', comment: '' },{ name: 'operation', type: 'string', comment: '' },{ name: 'modelid', type: 'string', comment: '使用したモデルの ID' },{ name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>', comment: 'inputcontenttype はモデルに入力したデータの形式、inputTokenCount はモデルに入力したトークン数でこれより深い JSON の階層はありません、inputbodyjson はモデルに入力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>', comment: 'outputcontenttype はモデルが出力したデータの形式、outputTokenCount はモデルが出力したトークン数でこれより深い JSON の階層はありません。outputbodyjson はモデルが出力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'inferenceregion', type: 'string', comment: 'モデルが推論したリージョン' }のみです。エラーが発生したときはエラーの内容を 200 で返すので、エラーを修正した上流し直す必要がある。"
+      description: "Athena で Bedrock のログに SQL で問い合わせして csv で返す。使用できるテーブルは `bedrock_logs_db.bedrock_model_invocation_logs` のみで、使用できる列名は  { name: 'schematype', type: 'string', comment: '' },{ name: 'schemaversion', type: 'string', comment: '' },{ name: 'timestamp', type: 'timestamp', comment: '' },{ name: 'accountid', type: 'string', comment: '' },{ name: 'identity', type: 'struct<arn:string>', comment: 'IAM ユーザーもしくはロールの ARN が格納' },{ name: 'region', type: 'string', comment: 'API を呼び出したリージョン' },{ name: 'requestid', type: 'string', comment: '' },{ name: 'operation', type: 'string', comment: '' },{ name: 'modelid', type: 'string', comment: '使用したモデルの ID' },{ name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>', comment: 'inputcontenttype はモデルに入力したデータの形式、inputTokenCount はモデルに入力したトークン数でこれより深い JSON の階層はありません、inputbodyjson はモデルに入力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>', comment: 'outputcontenttype はモデルが出力したデータの形式、outputTokenCount はモデルが出力したトークン数でこれより深い JSON の階層はありません。outputbodyjson はモデルが出力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'inferenceregion', type: 'string', comment: 'モデルが推論したリージョン' }のみです。エラーが発生したときはエラーの内容を 200 で返すので、エラーを修正して流し直す必要がある。"
       operationId: "select"
       x-requireConfirmation: "DISABLED"
       parameters:
@@ -22,7 +22,7 @@ paths:
 
       responses:
         '200':
-          description: "Athena の実行結果。成功していれば csv 形式で、失敗していればエラーメッセージが返る"
+          description: "Athena の実行結果。成功していれば csv 形式で、失敗していればエラーメッセージがテキスト返る"
           content:
             text/csv:
               schema:

@@ -7,6 +7,7 @@ import * as glue from 'aws-cdk-lib/aws-glue';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as athena from 'aws-cdk-lib/aws-athena';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { BEDROCK_LOGS_CONFIG } from '../parameter';
 
 export class AgentPreparationToolkitStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -126,11 +127,11 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     // ----------------- Bedrock Logs Watcher の 実装例 -----------------
 
-    const bedrockLogsBucket = this.node.tryGetContext('bedrockLogsBucket');
-    const bedrockLogsPrefix = this.node.tryGetContext('bedrockLogsPrefix');
+    const bedrockLogsBucket = BEDROCK_LOGS_CONFIG.bedrockLogsBucket;
+    const bedrockLogsPrefix = BEDROCK_LOGS_CONFIG.bedrockLogsPrefix;
     const bedrockLogsS3Uri = `s3://${bedrockLogsBucket}${bedrockLogsPrefix}`
     const bedrockLogsBucketArn = `arn:aws:s3:::${bedrockLogsBucket}`
-    if (bedrockLogsS3Uri && bedrockLogsS3Uri !== '') {
+    if (bedrockLogsBucket !== '' && bedrockLogsPrefix !== '') {
       const queryResultsBucket = new s3.Bucket(this, 'AthenaQueryResultsBucket', {
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
         encryption: s3.BucketEncryption.S3_MANAGED,
