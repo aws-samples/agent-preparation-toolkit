@@ -38,7 +38,7 @@ export interface AgentBuilderProps {
   actionGroupConfig: {
     openApiSchemaPath: OpenApiPath;
     lambdaFunctionPath: string;
-    lambdaPolicy?: iam.PolicyStatement;
+    lambdaPolicies?: iam.PolicyStatement[];
   };
   agentConfig: {
     description: string;
@@ -72,7 +72,7 @@ export class AgentBuilder extends Construct {
       openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
       lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
       actionGroupName: props.agentName,
-      lambdaPolicy: props.actionGroupConfig.lambdaPolicy
+      lambdaPolicies: props.actionGroupConfig.lambdaPolicies
     });
 
     // Agent の作成

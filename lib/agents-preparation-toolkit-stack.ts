@@ -126,7 +126,10 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     // ----------------- Bedrock Logs Watcher の 実装例 -----------------
 
-    const bedrockLogsS3Uri = this.node.tryGetContext('bedrockLogsS3Uri');
+    const bedrockLogsBucket = this.node.tryGetContext('bedrockLogsBucket');
+    const bedrockLogsPrefix = this.node.tryGetContext('bedrockLogsPrefix');
+    const bedrockLogsS3Uri = `s3://${bedrockLogsBucket}${bedrockLogsPrefix}`
+    const bedrockLogsBucketArn = `arn:aws:s3:::${bedrockLogsBucket}`
     if (bedrockLogsS3Uri && bedrockLogsS3Uri !== '') {
       const queryResultsBucket = new s3.Bucket(this, 'AthenaQueryResultsBucket', {
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -137,8 +140,8 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         serverAccessLogsPrefix: 'AccessLogs/',
         lifecycleRules: [
           {
-            expiration: cdk.Duration.days(7), // 7日後に古いクエリ結果を削除
-            prefix: 'query-results/' // クエリ結果のプレフィックスを指定
+            expiration: cdk.Duration.days(7),
+            prefix: 'query-results/'
           }
         ]
       });
@@ -194,18 +197,18 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
             sortColumns:[],
             storedAsSubDirectories: false,
             columns: [
-              { name: 'schematype', type: 'string' },
-              { name: 'schemaversion', type: 'string' },
-              { name: 'timestamp', type: 'timestamp' },
-              { name: 'accountid', type: 'string' },
-              { name: 'identity', type: 'struct<arn:string>' },
-              { name: 'region', type: 'string' },
-              { name: 'requestid', type: 'string' },
-              { name: 'operation', type: 'string' },
-              { name: 'modelid', type: 'string' },
-              { name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>'},
-              { name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>'},
-              { name: 'inferenceregion', type: 'string' }
+              { name: 'schematype', type: 'string', comment: '' },
+              { name: 'schemaversion', type: 'string', comment: '' },
+              { name: 'timestamp', type: 'timestamp', comment: '' },
+              { name: 'accountid', type: 'string', comment: '' },
+              { name: 'identity', type: 'struct<arn:string>', comment: 'IAM ユーザーもしくはロールの ARN が格納' },
+              { name: 'region', type: 'string', comment: 'API を呼び出したリージョン' },
+              { name: 'requestid', type: 'string', comment: '' },
+              { name: 'operation', type: 'string', comment: '' },
+              { name: 'modelid', type: 'string', comment: '使用したモデルの ID' },
+              { name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>', comment: 'inputcontenttype はモデルに入力したデータの形式、inputTokenCount はモデルに入力したトークン数、inputbodyjson はモデルに入力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },
+              { name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>', comment: 'outputcontenttype はモデルが出力したデータの形式、outputTokenCount はモデルが出力したトークン数、outputbodyjson はモデルが出力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },
+              { name: 'inferenceregion', type: 'string', comment: 'モデルが推論したリージョン' }
             ],
           },
           retention:0,
@@ -230,16 +233,49 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         actionGroupConfig: {
           openApiSchemaPath: './action-groups/bedrock-logs-watcher/schema/api-schema.yaml',
           lambdaFunctionPath: './action-groups/bedrock-logs-watcher/lambda/',
-          lambdaPolicy: new iam.PolicyStatement({
-            actions: [
-              'athena:StartQueryExecution',
-              'athena:GetQueryExecution',
-              'athena:GetQueryResults',
-            ],
-            resources: [
-              `arn:aws:athena:${region}:${accountId}:workgroup/${workGroup.name}`,
-            ]
-          })
+          lambdaPolicies: [
+            new iam.PolicyStatement({
+              actions: [
+                's3:GetBucketLocation',
+                's3:GetObject',
+                "s3:PutObject",
+                "s3:DeleteObject",
+                's3:ListBucket',
+              ],
+              resources: [
+                queryResultsBucket.bucketArn,
+                `${queryResultsBucket.bucketArn}/*`,
+              ]
+            }),
+            new iam.PolicyStatement({
+              actions: [
+                'glue:GetTable',
+                'glue:BatchGetTable',
+                'glue:GetDatabase',
+                'athena:GetQueryExecution',
+                'athena:StartQueryExecution',
+                'athena:GetQueryResults',
+                'kms:Decrypt',
+              ],
+              resources: [
+                `arn:aws:glue:${region}:${accountId}:catalog`,
+                `arn:aws:glue:${region}:${accountId}:database/bedrock_logs_db`,
+                `arn:aws:glue:${region}:${accountId}:table/bedrock_logs_db/*`,
+                `arn:aws:athena:${region}:${accountId}:workgroup/${workGroup.name}`,
+                `arn:aws:kms:${region}:${accountId}:key/*`,
+              ]
+            }),
+            new iam.PolicyStatement({
+              actions: [
+                's3:GetObject',
+                's3:ListBucket',
+              ],
+              resources: [
+                `${bedrockLogsBucketArn}/*`,
+                bedrockLogsBucketArn,
+              ]
+            }),
+          ]
         },
         agentConfig: {
           description: 'bedrock logs watcher',
