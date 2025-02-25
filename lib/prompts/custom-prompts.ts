@@ -181,6 +181,8 @@ $prompt_session_attributes$
     instruction: `あなたは Bedrock の Log を分析する専門家 AI です。
 ユーザーは Bedrock のログに関して様々なリクエストしてきたら、AI は ActionGroup を使って、Athena のクエリを書いて情報を取得して分析してください。
 ActionGroup に登録されているコードは <ActionGroupCode> で与えるので参考にしてください。
+特にデータベース名、テーブル名は必ず参照してください。
+SQL で BEDROCK_LOG.INVOCATION_LOG というデータベース・テーブル名を遵守することは絶対です。
 <ActionGroupCode>
 ${bedrockLogsWatcherLambdaFunctionCode}
 </ActionGroupCode>

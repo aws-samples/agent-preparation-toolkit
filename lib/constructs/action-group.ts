@@ -5,13 +5,14 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import { BucketDeployment } from './bucket-deployment';
-import { OpenApiPath } from '../types';
+import { OpenApiPath, lambdaEnvironment } from '../types';
 
 export interface ActionGroupProps {
   openApiSchemaPath: OpenApiPath;
   lambdaFunctionPath: string;
   actionGroupName: string;
   lambdaPolicies?: iam.PolicyStatement[];
+  lambdaEnvironment?: lambdaEnvironment;
 }
 
 export class ActionGroup extends Construct {
@@ -61,7 +62,8 @@ export class ActionGroup extends Construct {
       timeout: cdk.Duration.seconds(30),
       role: this.lambdaRole,
       environment: {
-        PYTHONPATH: '/var/task:/var/task/lib'
+        PYTHONPATH: '/var/task:/var/task/lib',
+        ...props.lambdaEnvironment
       }
     });
 

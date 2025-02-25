@@ -106,15 +106,23 @@ def lambda_handler(event: Dict[str, Any], _) -> Dict[str, Any]:
     print(event)
 
     # WorkGroupの設定
-    workgroup = os.environ.get('ATHENA_WORKGROUP', 'bedrock-logs-workgroup')
+    workgroup = os.environ.get('ATHENA_WORKGROUP', 'dev-bedrock-logs-workgroup')
+    table = (
+        '"'
+        + os.environ.get('DATABASE', 'dev-bedrock_logs_db')
+        + '"."'
+        + os.environ.get('TABLE', 'dev-bedrock_model_invocation_logs')
+        + '"'
+    )
+
+    print(table)
 
     # SQLの取得
     sql = None
     for param in event.get('parameters', []):
         if param.get('name') == 'sql':
-            sql = param.get('value')
+            sql = param.get('value').replace('BEDROCK_LOG.INVOCATION_LOG', table)
             break
-
     print(sql)
 
     if not sql:
@@ -144,9 +152,8 @@ if __name__ == "__main__":
     output.outputcontenttype,
     output.outputTokenCount,
     output.outputbodyjson
-FROM "bedrock_logs_db"."bedrock_model_invocation_logs"
+FROM BEDROCK_LOG.INVOCATION_LOG
 limit 10;'''
-    sql = 'SELECT      timestamp,     modelid,     operation,     input.inputTokenCount as input_tokens FROM bedrock_logs_db.bedrock_model_invocation_logs ORDER BY timestamp DESC LIMIT 6;'
     test_event = {
         "messageVersion": "1.0",
         "parameters": [

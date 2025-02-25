@@ -9,6 +9,7 @@ import { ModelId } from '../types/model';
 import { EmbeddingModelId } from '../types/model'
 import { OpenApiPath } from '../types';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { lambdaEnvironment } from '../types';
 
 export interface DataSourceConfig {
   dataDir: string;
@@ -39,6 +40,7 @@ export interface AgentBuilderProps {
     openApiSchemaPath: OpenApiPath;
     lambdaFunctionPath: string;
     lambdaPolicies?: iam.PolicyStatement[];
+    lambdaEnvironment?: lambdaEnvironment;
   };
   agentConfig: {
     description: string;
@@ -72,7 +74,8 @@ export class AgentBuilder extends Construct {
       openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
       lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
       actionGroupName: props.agentName,
-      lambdaPolicies: props.actionGroupConfig.lambdaPolicies
+      lambdaPolicies: props.actionGroupConfig.lambdaPolicies,
+      lambdaEnvironment: props.actionGroupConfig.lambdaEnvironment
     });
 
     // Agent の作成
