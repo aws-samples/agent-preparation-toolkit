@@ -13,6 +13,7 @@ def main():
         'dev-human-resource-agent': 'Kazuhito Go の今年度の年休付与日数は？',
         'dev-product-support-agent': 'E-03',
         'dev-python-coder': '３次元ベクトルの外積を計算するコードを書いて',
+        'dev-bedrock-logs-watcher': 'input token が一番多い人を教えて',
     }
     for doc in documents:
         prompt = prompts[doc['agentName']]
