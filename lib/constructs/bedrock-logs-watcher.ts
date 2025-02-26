@@ -149,14 +149,6 @@ export class BedrockLogsWatcherConstruct extends Construct {
           `arn:aws:kms:${region}:${accountId}:key/*`,
         ]
       }),
-      // new iam.PolicyStatement({
-      //   actions: [
-      //     '*'
-      //   ],
-      //   resources: [
-      //     `*`
-      //   ]
-      // }),
       new iam.PolicyStatement({
         actions: [
           's3:GetObject',

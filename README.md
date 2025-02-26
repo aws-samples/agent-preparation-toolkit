@@ -23,8 +23,9 @@ cd agent-preparation-toolkit
 # パッケージのインストール
 npm install && cd custom-resources && npm ci && cd ..
 cd ./action-groups/python-coder/lambda && pip install -r requirements.txt -t lib/ && cd ../../../
+cd ./action-groups/bedrock-logs-watcher/lambda && pip install -r requirements.txt -t lib/ && cd ../../../
 
-# CDK Bootstrap
+# CDK Bootstrap 
 cdk bootstrap
 
 # Agent のデプロイ
@@ -99,9 +100,29 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
   * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
   * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
 
+## Optional Agents
+
+### Bedrock Logs Watcher
+Amazon Bedrock では[モデルの呼び出しログを S3 に保存することができます](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)。  
+
+Log を Glue のテーブルに取り込んだ上、Agent が SQL を発行して Lambda から Athena 経由でクエリを実行できます。  
+例えば、自然言語で今までで一番 Input/Output Tokens を使用した IAM ユーザー/ロールの特定と tokens の推移を可視化できます。  
+
+Bedrock Logs Watcher を有効化するには事前の設定が必要で、[parameter.ts](./parameter.ts) の以下部分 2 箇所を設定をした後、再度デプロイコマンドを順に実行してください。
+
+```typescript
+export const BEDROCK_LOGS_CONFIG: BedrockLogsConfig = {
+  bedrockLogsBucket: "", // Bedrock のログを保存しているバケット。ログの有効化をしていない場合はマネジメントコンソールから S3 にログを出力するように設定する必要があります。
+  bedrockLogsPrefix: "", //デフォルトだとこちら → /AWSLogs/{ACCOUNT}/BedrockModelInvocationLogs/{REGION}/
+};
+```
+
+
+![bedrock-logs-watcher-sample](./image/bedrock-logs-watcher-sample.png)
+![bedrock-logs-watcher](./image/bedrock-logs-watcher.png)
 
 > [!IMPORTANT]
-> Human Resource Agent 及び Product Support Agent には Amazon Bedrock Agents で LLM が SQL を考えて Action Group に登録されている AWS Lambda の Lambda 関数が SQL を実行する仕組みが入っています。  
+> Human Resource Agent 及び Product Support Agent, Bedrock Logs Watcher には Amazon Bedrock Agents で LLM が SQL を考えて Action Group に登録されている AWS Lambda の Lambda 関数が SQL を実行する仕組みが入っています。  
 > 本サンプルでは Lambda 関数上に立てている SQLite の DB に対してクエリを投げており、Lambda 関数上で INSERT や DROP の命令を除外する仕組みが入っています。  
 > 実際には RDS や Athena などの DB に対してクエリを投げるはずですが、そのときは Lambda のロールや、DB のユーザーに対して、SELECT (READ) 系の実行しかできないよう権限の制御をかけてください。
 
