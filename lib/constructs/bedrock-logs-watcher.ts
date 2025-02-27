@@ -6,7 +6,7 @@ import * as athena from 'aws-cdk-lib/aws-athena';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface BedrockLogsWatcherProps {
-  env: string;
+  prefix: string;
   accountId: string;
   region: string;
   bedrockLogsBucket: string;
@@ -45,7 +45,7 @@ export class BedrockLogsWatcherConstruct extends Construct {
 
     // Athena ワークグループの作成
     this.workGroup = new athena.CfnWorkGroup(this, 'BedrockLogsWorkgroup', {
-      name: `${props.env}bedrock-logs-workgroup`,
+      name: `${props.prefix}bedrock-logs-workgroup`,
       recursiveDeleteOption: true,
       description: 'Workgroup for querying Bedrock logs',
       state: 'ENABLED',
@@ -68,7 +68,7 @@ export class BedrockLogsWatcherConstruct extends Construct {
     this.database = new glue.CfnDatabase(this, 'BedrockLogsDatabase', {
       catalogId: accountId,
       databaseInput: {
-        name: `${props.env}bedrock_logs_db`,
+        name: `${props.prefix}bedrock_logs_db`,
       },
     });
 
@@ -77,7 +77,7 @@ export class BedrockLogsWatcherConstruct extends Construct {
       catalogId: accountId,
       databaseName: this.database.ref,
       tableInput: {
-        name: `${props.env}bedrock_model_invocation_logs`,
+        name: `${props.prefix}bedrock_model_invocation_logs`,
         tableType: 'EXTERNAL_TABLE',
         parameters: {
           'classification': 'json'

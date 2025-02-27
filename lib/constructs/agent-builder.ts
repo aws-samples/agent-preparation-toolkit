@@ -18,7 +18,7 @@ export interface DataSourceConfig {
 }
 
 export interface AgentBuilderProps {
-  env: string;
+  prefix: string;
   region: string;
   accountId: string;
   modelId: ModelId;
@@ -60,7 +60,7 @@ export class AgentBuilder extends Construct {
     // Knowledge Base の作成
     if (props.knowledgeBaseConfig){
       this.knowledgeBase = new KnowledgeBase(this, 'KnowledgeBase', {
-        env: props.env,
+        prefix: props.prefix,
         region: props.region,
         dataSources: props.knowledgeBaseConfig.dataSources,
         name: props.knowledgeBaseConfig.name,
@@ -80,7 +80,7 @@ export class AgentBuilder extends Construct {
 
     // Agent の作成
     this.agent = new Agent(this, 'Agent', {
-      env: props.env,
+      prefix: props.prefix,
       accountId: props.accountId,
       region: props.region,
       name: props.agentName,

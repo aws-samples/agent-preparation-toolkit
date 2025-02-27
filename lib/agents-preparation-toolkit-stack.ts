@@ -12,7 +12,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     super(scope, id, props);
     const accountId = cdk.Stack.of(this).account;
     const region = cdk.Stack.of(this).region;
-    const env: string = ENVIRONMENT_CONFIG.env;
+    const prefix: string = ENVIRONMENT_CONFIG.prefix;
     const promptManager = new PromptManager();
 
     // const modelId: ModelId = 'anthropic.claude-3-5-haiku-20241022-v1:0';
@@ -24,7 +24,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     const PythonCoderName = 'python-coder';
     new AgentBuilder(this, 'PythonCoder', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -50,7 +50,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     // ----------------- 人事の Agent 実装例 -----------------
     const hrAgentName = 'human-resource-agent';
     new AgentBuilder(this, 'HRAgent', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -88,7 +88,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
     const productSupportAgentName = 'product-support-agent';
     new AgentBuilder(this, 'ProductSupportAgent', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -129,7 +129,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     const bedrockLogsPrefix = BEDROCK_LOGS_CONFIG.bedrockLogsPrefix;
     if (bedrockLogsBucket !== '' && bedrockLogsPrefix !== '') {
       const bedrockLogsWatcher = new BedrockLogsWatcherConstruct(this, 'BedrockLogsWatcherInfra', {
-        env,
+        prefix,
         accountId,
         region,
         bedrockLogsBucket,
@@ -138,7 +138,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       
       const BedrockLogsWatcherName = 'bedrock-logs-watcher';
       new AgentBuilder(this, 'BedrockLogsWatcher', {
-        env: env,
+        prefix: prefix,
         region: region,
         accountId: accountId,
         modelId: modelId,
