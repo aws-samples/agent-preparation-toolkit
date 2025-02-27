@@ -17,7 +17,7 @@ interface ExtendedDataSource extends DataSource {
 }
 
 export interface KnowledgeBaseProps{
-  env: string;
+  prefix: string;
   region: string;
   dataSources: DataSource[];
   extraBuckets?: string[];
@@ -55,7 +55,7 @@ export class KnowledgeBase extends Construct {
     });
 
     const knowledgeBaseCollection = new KnowledgeBaseCollection(this, 'KnowledgeBaseCollection', {
-      env: props.env,
+      prefix: props.prefix,
       collectionName: props.name,
       vectorIndexName: vectorIndexName,
       embeddingModelId: props.embeddingModelId,
@@ -67,8 +67,8 @@ export class KnowledgeBase extends Construct {
 
     knowledgeBaseRole.grantRead(knowledgeBaseCollection.collectionArn)
 
-    const knowledgeBase = new bedrock.CfnKnowledgeBase(this, `${props.env}KnowledgeBase`, {
-      name: `${props.env}${props.name}`,
+    const knowledgeBase = new bedrock.CfnKnowledgeBase(this, `${props.prefix}KnowledgeBase`, {
+      name: `${props.prefix}${props.name}`,
       roleArn: knowledgeBaseRole.arn,
       knowledgeBaseConfiguration: {
         type: 'VECTOR',
@@ -96,7 +96,7 @@ export class KnowledgeBase extends Construct {
 
     
     for (const dataSource of dataSourcesWithBuckets) {
-      this.dataSourceIds.push(new bedrock.CfnDataSource(this, `${props.env}DataSource`,{
+      this.dataSourceIds.push(new bedrock.CfnDataSource(this, `${props.prefix}DataSource`,{
         dataSourceConfiguration:{
           s3Configuration:{
             bucketArn: dataSource.bucket.bucketArn,
@@ -114,7 +114,7 @@ export class KnowledgeBase extends Construct {
           },
         },
         knowledgeBaseId: knowledgeBase.attrKnowledgeBaseId,
-        name: `${props.env}${dataSource.name}`,
+        name: `${props.prefix}${dataSource.name}`,
         description: dataSource.description || ''
       }).attrDataSourceId);
     }

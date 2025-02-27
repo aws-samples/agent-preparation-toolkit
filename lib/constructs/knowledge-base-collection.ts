@@ -56,7 +56,7 @@ class OpenSearchServerlessIndex extends Construct {
 
 
 export interface KnowledgeBaseCollectionProps{
-  env: string;
+  prefix: string;
   collectionName: string;
   vectorIndexName: string;
   embeddingModelId: EmbeddingModelId;
@@ -71,7 +71,7 @@ export class KnowledgeBaseCollection extends Construct {
   constructor(scope: Construct, id: string, props: KnowledgeBaseCollectionProps) {
     super(scope, id);
 
-    const collection = new aoss.CfnCollection(this, `${props.env}Collection`, {
+    const collection = new aoss.CfnCollection(this, `${props.prefix}Collection`, {
       name: props.collectionName,
       description: '',
       type: 'VECTORSEARCH',
@@ -96,7 +96,7 @@ export class KnowledgeBaseCollection extends Construct {
         actions: ['aoss:APIAccessAll'],
       })
     );
-    const accessPolicy = new aoss.CfnAccessPolicy(this, `${props.env}AccessPolicy`, {
+    const accessPolicy = new aoss.CfnAccessPolicy(this, `${props.prefix}AccessPolicy`, {
       name: props.collectionName,
       policy: JSON.stringify([
         {
@@ -132,7 +132,7 @@ export class KnowledgeBaseCollection extends Construct {
       ]),
       type: 'data',
     });
-    const networkPolicy = new aoss.CfnSecurityPolicy(this, `${props.env}NetworkPolicy`, {
+    const networkPolicy = new aoss.CfnSecurityPolicy(this, `${props.prefix}NetworkPolicy`, {
       name: props.collectionName,
       policy: JSON.stringify([
         {
@@ -152,7 +152,7 @@ export class KnowledgeBaseCollection extends Construct {
       type: 'network',
     });
 
-    const encryptionPolicy = new aoss.CfnSecurityPolicy(this,`${props.env}EncryptionPolicy`,{
+    const encryptionPolicy = new aoss.CfnSecurityPolicy(this,`${props.prefix}EncryptionPolicy`,{
       name: props.collectionName,
       policy: JSON.stringify({
         Rules: [

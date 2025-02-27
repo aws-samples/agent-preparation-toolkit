@@ -1,0 +1,36 @@
+openapi: 3.0.0
+info:
+  title: 'Bedrock Logs Query'
+  version: 1.0.0
+  description: "Bedrock のログに Athena 経由でクエリを発行して csv で返す"
+paths:
+  /select:
+    get:
+      summary: 'Bedrock Logs Query'
+      description: "Athena で Bedrock のログに SQL で問い合わせして csv で返す。SQL の FROM 句で使用するデータベースとテーブルは **BEDROCK_LOG.INVOCATION_LOG** という名前を**必ず**使用する必要がある。**BEDROCK_LOG.INVOCATION_LOG** というテーブル名は絶対です。カラムは  { name: 'schematype', type: 'string', comment: '' },{ name: 'schemaversion', type: 'string', comment: '' },{ name: 'timestamp', type: 'timestamp', comment: '' },{ name: 'accountid', type: 'string', comment: '' },{ name: 'identity', type: 'struct<arn:string>', comment: 'IAM ユーザーもしくはロールの ARN が格納' },{ name: 'region', type: 'string', comment: 'API を呼び出したリージョン' },{ name: 'requestid', type: 'string', comment: '' },{ name: 'operation', type: 'string', comment: '' },{ name: 'modelid', type: 'string', comment: '使用したモデルの ID' },{ name: 'input', type: 'struct<inputcontenttype:string,inputTokenCount:int,inputbodyjson:string>', comment: 'inputcontenttype はモデルに入力したデータの形式、inputTokenCount はモデルに入力したトークン数でこれより深い JSON の階層はありません、inputbodyjson はモデルに入力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'output', type: 'struct<outputcontenttype:string,outputTokenCount:int,outputbodyjson:string>', comment: 'outputcontenttype はモデルが出力したデータの形式、outputTokenCount はモデルが出力したトークン数でこれより深い JSON の階層はありません。outputbodyjson はモデルが出力したデータで文字列型であり、JSON Parse できるかの保証がないので注意' },{ name: 'inferenceregion', type: 'string', comment: 'モデルが推論したリージョン' }のみです。エラーが発生したときはエラーの内容を 200 で返すので、エラーを修正して流し直す必要がある。"
+      operationId: "select"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: sql
+          in: query
+          description: 'SQL の SELECT 文'
+          required: true
+          schema:
+            type: string
+            pattern: '^SELECT\s+.*$'
+            example: "SELECT schematype, schemaversion, timestamp, accountid, identity, region, requestid, operation, modelid, input.inputcontenttype,input.inputTokenCount,input.inputbodyjson,output.outputcontenttype,output.outputTokenCount,output.outputbodyjson, inferenceregion FROM BEDROCK_LOG.INVOCATION_LOG limit 10;"
+
+      responses:
+        '200':
+          description: "Athena の実行結果。成功していれば csv 形式で、失敗していればエラーメッセージがテキスト返る"
+          content:
+            text/csv:
+              schema:
+                type: string
+              example: 'schematype,schemaversion,timestamp,accountid,identity,region,requestid,operation,modelid,input,output,inferenceregion\naws.bedrock,2023-09-30,2024-01-01T00:00:00.000Z,123456789012,{"arn":"arn:aws:iam::123456789012:role/example"},us-east-1,abcd1234-ef56-gh78-ij90-klmnopqrstuv,InvokeModel,anthropic.claude-v2,{"inputContentType":"..."},{"outputContentType":"..."},us-east-1'
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header

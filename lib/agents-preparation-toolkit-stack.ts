@@ -3,13 +3,16 @@ import { Construct } from 'constructs';
 import { PromptManager } from './prompts/prompt-manager';
 import { ModelId } from './types/model';
 import { AgentBuilder } from './constructs/agent-builder';
+import { BedrockLogsWatcherConstruct } from './constructs/bedrock-logs-watcher';
+import { ENVIRONMENT_CONFIG, BEDROCK_LOGS_CONFIG } from '../parameter';
+
 
 export class AgentPreparationToolkitStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     const accountId = cdk.Stack.of(this).account;
     const region = cdk.Stack.of(this).region;
-    const env: string = ((props && props.env) ?? '') as string;
+    const prefix: string = ENVIRONMENT_CONFIG.prefix;
     const promptManager = new PromptManager();
 
     // const modelId: ModelId = 'anthropic.claude-3-5-haiku-20241022-v1:0';
@@ -21,7 +24,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     const PythonCoderName = 'python-coder';
     new AgentBuilder(this, 'PythonCoder', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -47,7 +50,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     // ----------------- 人事の Agent 実装例 -----------------
     const hrAgentName = 'human-resource-agent';
     new AgentBuilder(this, 'HRAgent', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -85,7 +88,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
     // ----------------- プロダクトサポートの Agent 実装例 -----------------
     const productSupportAgentName = 'product-support-agent';
     new AgentBuilder(this, 'ProductSupportAgent', {
-      env: env,
+      prefix: prefix,
       region: region,
       accountId: accountId,
       modelId: modelId,
@@ -119,6 +122,51 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         codeInterpreter: false,
       }
     });
+
+    // ----------------- Bedrock Logs Watcher の 実装例 -----------------
+
+    const bedrockLogsBucket = BEDROCK_LOGS_CONFIG.bedrockLogsBucket;
+    const bedrockLogsPrefix = BEDROCK_LOGS_CONFIG.bedrockLogsPrefix;
+    if (bedrockLogsBucket !== '' && bedrockLogsPrefix !== '') {
+      const bedrockLogsWatcher = new BedrockLogsWatcherConstruct(this, 'BedrockLogsWatcherInfra', {
+        prefix,
+        accountId,
+        region,
+        bedrockLogsBucket,
+        bedrockLogsPrefix
+      });
+      
+      const BedrockLogsWatcherName = 'bedrock-logs-watcher';
+      new AgentBuilder(this, 'BedrockLogsWatcher', {
+        prefix: prefix,
+        region: region,
+        accountId: accountId,
+        modelId: modelId,
+        prompts: {
+          instruction: promptManager.getPrompts(modelId, BedrockLogsWatcherName).instruction,
+          PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+          ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+          KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+          POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
+        },
+        agentName: BedrockLogsWatcherName,
+        actionGroupConfig: {
+          openApiSchemaPath: './action-groups/bedrock-logs-watcher/schema/api-schema.yaml',
+          lambdaFunctionPath: './action-groups/bedrock-logs-watcher/lambda/',
+          lambdaPolicies: bedrockLogsWatcher.lambdaPolicies,
+          lambdaEnvironment: {
+            ATHENA_WORKGROUP: bedrockLogsWatcher.workGroup.name,
+            DATABASE: bedrockLogsWatcher.database.ref,
+            TABLE: bedrockLogsWatcher.table.ref,
+          }
+        },
+        agentConfig: {
+          description: 'bedrock logs watcher',
+          userInput: true,
+          codeInterpreter: true,
+        }
+      });
+    }
 
     // スタック名の出力
     new cdk.CfnOutput(this, 'StackName', {

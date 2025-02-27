@@ -8,6 +8,8 @@ import { Agent } from './agent';
 import { ModelId } from '../types/model';
 import { EmbeddingModelId } from '../types/model'
 import { OpenApiPath } from '../types';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { lambdaEnvironment } from '../types';
 
 export interface DataSourceConfig {
   dataDir: string;
@@ -16,7 +18,7 @@ export interface DataSourceConfig {
 }
 
 export interface AgentBuilderProps {
-  env: string;
+  prefix: string;
   region: string;
   accountId: string;
   modelId: ModelId;
@@ -37,6 +39,8 @@ export interface AgentBuilderProps {
   actionGroupConfig: {
     openApiSchemaPath: OpenApiPath;
     lambdaFunctionPath: string;
+    lambdaPolicies?: iam.PolicyStatement[];
+    lambdaEnvironment?: lambdaEnvironment;
   };
   agentConfig: {
     description: string;
@@ -56,7 +60,7 @@ export class AgentBuilder extends Construct {
     // Knowledge Base の作成
     if (props.knowledgeBaseConfig){
       this.knowledgeBase = new KnowledgeBase(this, 'KnowledgeBase', {
-        env: props.env,
+        prefix: props.prefix,
         region: props.region,
         dataSources: props.knowledgeBaseConfig.dataSources,
         name: props.knowledgeBaseConfig.name,
@@ -70,11 +74,13 @@ export class AgentBuilder extends Construct {
       openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
       lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
       actionGroupName: props.agentName,
+      lambdaPolicies: props.actionGroupConfig.lambdaPolicies,
+      lambdaEnvironment: props.actionGroupConfig.lambdaEnvironment
     });
 
     // Agent の作成
     this.agent = new Agent(this, 'Agent', {
-      env: props.env,
+      prefix: props.prefix,
       accountId: props.accountId,
       region: props.region,
       name: props.agentName,

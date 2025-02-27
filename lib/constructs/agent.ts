@@ -6,7 +6,7 @@ import { ActionGroup } from './action-group';
 import { ModelId } from '../types/model'
 
 export interface AgentProps {
-  readonly env: string;
+  readonly prefix: string;
   readonly accountId: string;
   readonly region: string;
   readonly name: string;
@@ -40,15 +40,15 @@ export class Agent extends Construct {
     const agentRole = new AgentRole(this, `AgentRole`, {
       accountId: props.accountId,
       region: props.region,
-      agentName: `${props.env}${props.name}`,
+      agentName: `${props.prefix}${props.name}`,
       knowledgeBaseIds: props.knowledgeBases ? props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId): [],
       roleName: props.name,
       lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
       s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
     });
 
-    const agent = new bedrock.CfnAgent(this, `${props.env}Agent`, {
-      agentName: `${props.env}${props.name}`,
+    const agent = new bedrock.CfnAgent(this, `${props.prefix}Agent`, {
+      agentName: `${props.prefix}${props.name}`,
       agentResourceRoleArn: agentRole.roleArn,
       instruction: props.prompts.instruction,
       knowledgeBases: props.knowledgeBases ? props.knowledgeBases.map(knowledgeBase => ({
@@ -166,12 +166,6 @@ export class Agent extends Construct {
         sourceArn: agent.attrAgentArn
       })
     }
-
-    
-    // new bedrock.CfnAgentAlias(this, `${props.env}AgentAlias`, {
-    //   agentAliasName: 'v1',
-    //   agentId: agent.attrAgentId,
-    // });
 
     this.agentName = agent.agentName
     this.agentId = agent.attrAgentId;

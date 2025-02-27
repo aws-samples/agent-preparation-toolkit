@@ -5,8 +5,9 @@ import time
 
 
 class AwsOperations:
-    def __init__(self):
+    def __init__(self, region=None):
         self.session = boto3.Session()
+        self.region = region
 
     def parse_args(self):
         parser = argparse.ArgumentParser()
@@ -16,15 +17,21 @@ class AwsOperations:
             required=True,
             help='Cfn Stack Name',
         )
+        parser.add_argument(
+            '--region',
+            '-r',
+            required=True,
+            help='region',
+        )
         return parser.parse_args()
 
     def get_cloudformation_outputs(self, stack_name):
-        cfn = self.session.client('cloudformation')
+        cfn = self.session.client('cloudformation', region_name=self.region)
         response = cfn.describe_stacks(StackName=stack_name)
         return response['Stacks'][0]['Outputs']
 
     def start_ingestion_job(self, knowledge_base_id, data_source_id):
-        bra = self.session.client('bedrock-agent')
+        bra = self.session.client('bedrock-agent', region_name=self.region)
         response = bra.start_ingestion_job(
             knowledgeBaseId=knowledge_base_id,
             dataSourceId=data_source_id,
@@ -36,7 +43,7 @@ class AwsOperations:
         }
 
     def check_ingestion_job_status(self, job_info):
-        bra = self.session.client('bedrock-agent')
+        bra = self.session.client('bedrock-agent', region_name=self.region)
         while True:
             try:
                 response = bra.get_ingestion_job(
@@ -108,6 +115,7 @@ class AwsOperations:
 
     def main(self):
         args = self.parse_args()
+        self.region = args.region
 
         outputs = self.get_cloudformation_outputs(args.stack_name)
 

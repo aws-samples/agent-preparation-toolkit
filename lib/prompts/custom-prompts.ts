@@ -2,6 +2,7 @@ import { CustomPrompt } from '../types';
 import * as fs from 'fs';
 import * as path from 'path';
 const pythonCoderLambdaFunctionCode: string = fs.readFileSync(path.join(__dirname, '../../action-groups/python-coder/lambda/index.py'), 'utf-8');
+const bedrockLogsWatcherLambdaFunctionCode: string = fs.readFileSync(path.join(__dirname, '../../action-groups/bedrock-logs-watcher/lambda/index.py'), 'utf-8');
 
 export const CUSTOM_PROMPTS: CustomPrompt[] = [
   {
@@ -174,5 +175,23 @@ $prompt_session_attributes$
     knowledgeBaseResponseGeneration: ``,
     postProcessing: ``,
     memorySummarization:``
-  }
+  },
+  {
+    agentPromptsId: 'bedrock-logs-watcher',
+    instruction: `あなたは Bedrock の Log を分析する専門家 AI です。
+ユーザーは Bedrock のログに関して様々なリクエストしてきたら、AI は ActionGroup を使って、Athena のクエリを書いて情報を取得して分析してください。
+ActionGroup に登録されているコードは <ActionGroupCode> で与えるので参考にしてください。
+特にデータベース名、テーブル名は必ず参照してください。
+SQL で BEDROCK_LOG.INVOCATION_LOG というデータベース・テーブル名を遵守することは絶対です。
+<ActionGroupCode>
+${bedrockLogsWatcherLambdaFunctionCode}
+</ActionGroupCode>
+ユーザーが可視化を求めたときや SQL だけでは難しい集計を求めたときは CodeInterpreter を使ってください。
+`,
+    preProcessing: ``,
+    orchestration: ``,
+    knowledgeBaseResponseGeneration: ``,
+    postProcessing: ``,
+    memorySummarization:``
+  },
 ];

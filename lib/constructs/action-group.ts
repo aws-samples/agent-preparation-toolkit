@@ -5,13 +5,14 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import { BucketDeployment } from './bucket-deployment';
-import { OpenApiPath } from '../types';
+import { OpenApiPath, lambdaEnvironment } from '../types';
 
 export interface ActionGroupProps {
   openApiSchemaPath: OpenApiPath;
   lambdaFunctionPath: string;
   actionGroupName: string;
-  lambdaPolicy?: iam.PolicyStatement;
+  lambdaPolicies?: iam.PolicyStatement[];
+  lambdaEnvironment?: lambdaEnvironment;
 }
 
 export class ActionGroup extends Construct {
@@ -45,8 +46,10 @@ export class ActionGroup extends Construct {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
 
-    if (props.lambdaPolicy) {
-      this.lambdaRole.addToPolicy(props.lambdaPolicy);
+    if (Array.isArray(props.lambdaPolicies) && props.lambdaPolicies.length > 0) {
+      props.lambdaPolicies.forEach((policy) => {
+        this.lambdaRole.addToPolicy(policy);
+      });
     }
 
     this.lambdaFunction = new lambda.Function(this, 'Function', {
@@ -59,7 +62,8 @@ export class ActionGroup extends Construct {
       timeout: cdk.Duration.seconds(30),
       role: this.lambdaRole,
       environment: {
-        PYTHONPATH: '/var/task/lib'
+        PYTHONPATH: '/var/task:/var/task/lib',
+        ...props.lambdaEnvironment
       }
     });
 
