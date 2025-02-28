@@ -14,6 +14,31 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 > node.js 及び python, boto3 がインストールされている必要があります。
 > 環境に応じてインストールしてください。
 
+> [!TIP]
+> 後述の内包している Agents は`parameter.ts` の各 Agent の設定の enabled の部分を `true` もしくは `false` にすることで有効無効の設定をした上でデプロイできます。  
+> bedrock-logs-watcher だけは後述する別途の設定が必要なことに注意してください。  
+> Amazon OpenSearch Service Serverless を仕様する Agents は初期設定で `false` にしています。
+
+```typescript
+  pythonCoder: {
+    enabled: true,
+  },
+  hrAgent: {
+    enabled: false,
+  },
+  productSupportAgent: {
+    enabled: false,
+  },
+  bedrockLogWatcher: {
+    enabled: true,
+    config: {
+      bedrockLogsBucket: '',
+      bedrockLogsPrefix: '',
+    },
+  },
+```
+
+
 ```shell
 # リポジトリの Clone
 git clone https://github.com/aws-samples/agent-preparation-toolkit
@@ -44,11 +69,7 @@ python 1_sync.py -s {YOUR_STACK_NAME} -r us-west-2 # DataSource の同期が走�
 python 2_invoke.py -r us-west-2 # region を変えた場合は region 名を修正する。詳細のトレースがほしい場合は --raw オプションを入れる
 ```
 
-## プリセットの Agents
-
-これらの Agent は `lib/agents-preparation-toolkit-stack.ts` の各 Agent 定義部分をコメントアウトすることでそれぞれ無効化することができます。  
-必要なものだけをご利用ください。  
-また、裏側で動く **Action Group (AWS Lambda) のコード や Knowledge Base のデータを差し替えるだけで自社用の Agent にする**ことができます。
+## 内包する Agents
 
 ### Python Coder
 ユーザーは Python Coder にコーディングして欲しい内容を与えると、Python Coder は自分でコードを書き、自動でテストし、コードとテスト結果を返します。  
@@ -100,8 +121,6 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
 * プロンプト
   * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
   * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
-
-## Optional Agents
 
 ### Bedrock Logs Watcher
 Amazon Bedrock では[モデルの呼び出しログを S3 に保存することができます](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)。  

@@ -11,15 +11,44 @@ export const ENVIRONMENT_CONFIG: EnvironmentConfig = {
   prefix: 'dev-',
 };
 
-
 export const BedrockLogsSchema = z.object({
   bedrockLogsBucket: z.string(),
   bedrockLogsPrefix: z.string(),
 });
 
-export type BedrockLogsConfig = z.infer<typeof BedrockLogsSchema>;
+export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 
-export const BEDROCK_LOGS_CONFIG: BedrockLogsConfig = {
-  bedrockLogsBucket: '', // Bedrock のログを保存しているバケット。設定していない場合はマネジメントコンソールから設定すること
-  bedrockLogsPrefix: '', //デフォルトだとこちら → /AWSLogs/{ACCOUNT}/BedrockModelInvocationLogs/{REGION}/
+export const AgentConfigSchema = z.object({
+  pythonCoder: z.object({
+    enabled: z.boolean()
+  }),
+  hrAgent: z.object({
+    enabled: z.boolean(),
+  }),
+  productSupportAgent: z.object({
+    enabled: z.boolean(),
+  }),
+  bedrockLogWatcher: z.object({
+    enabled: z.boolean(),
+    config: BedrockLogsSchema.required()
+  }),
+});
+
+export const AGENT_CONFIG: AgentConfig = {
+  pythonCoder: {
+    enabled: true,
+  },
+  hrAgent: {
+    enabled: false,
+  },
+  productSupportAgent: {
+    enabled: false,
+  },
+  bedrockLogWatcher: {
+    enabled: true,
+    config: {
+      bedrockLogsBucket: '', // Bedrock のログを保存しているバケット。設定していない場合はマネジメントコンソールから設定すること
+      bedrockLogsPrefix: '', //デフォルトだとこちら → /AWSLogs/{ACCOUNT}/BedrockModelInvocationLogs/{REGION}/
+    },
+  },
 };
