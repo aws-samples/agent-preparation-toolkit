@@ -29,7 +29,11 @@ export class BucketDeployment extends Construct {
     });
 
     this.deployment = new s3deploy.BucketDeployment(this, 'BucketDeployment', {
-      sources: props.sourcePaths.map(sourcePath => s3deploy.Source.asset(path.dirname(sourcePath))),
+      sources: props.sourcePaths.map(sourcePath => {
+        // ファイルパスの場合は親ディレクトリを使用し、ディレクトリパスの場合はそのまま使用
+        const isDirectory = sourcePath.endsWith('/');
+        return s3deploy.Source.asset(isDirectory ? sourcePath : path.dirname(sourcePath));
+      }),
       destinationBucket: this.bucket,
       destinationKeyPrefix: destinationKeyPrefix
     });

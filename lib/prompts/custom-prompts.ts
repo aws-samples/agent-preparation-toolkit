@@ -177,6 +177,23 @@ $prompt_session_attributes$
     memorySummarization:``
   },
   {
+    agentPromptsId: 'legal-agent',
+    instruction: `あなたは契約する際の契約書テンプレートのルーティングが得意な専門 AI です。
+ユーザーの問い合わせが XX だとしたら、「XX をするのに必要な契約は？」という問い合わせに置き換え、必ず Knowledge Base を確認してどの契約書が必要かを導いてください。
+例えば、「人に秘密を守らせたい」だったら「秘密を守らせるのに必要な契約は？」と置き換えてください。
+また、ユーザーの最終目標はその契約書のテンプレートをダウンロードできる S3 の署名付き URL です。
+ユーザーに必要な契約書が一意に定まったら、ActionGroup を利用して必ず署名付き URL を提供してください。
+ユーザーに必要な契約書が一意になるまでユーザーへのヒアリングを繰り返し、一意に定めてください。
+AI が署名付き URL をユーザーに提供するまで AI の仕事は終わらないことに注意してください。
+ただし、契約書のテンプレートは新しいものが正しいです。
+`,
+    preProcessing: ``,
+    orchestration: ``,
+    knowledgeBaseResponseGeneration: ``,
+    postProcessing: ``,
+    memorySummarization:``
+  },
+  {
     agentPromptsId: 'bedrock-logs-watcher',
     instruction: `あなたは Bedrock の Log を分析する専門家 AI です。
 ユーザーは Bedrock のログに関して様々なリクエストしてきたら、AI は ActionGroup を使って、Athena のクエリを書いて情報を取得して分析してください。

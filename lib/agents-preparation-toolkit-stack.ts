@@ -5,6 +5,8 @@ import { ModelId } from './types/model';
 import { AgentBuilder } from './constructs/agent-builder';
 import { BedrockLogsWatcherConstruct } from './constructs/bedrock-logs-watcher';
 import { ENVIRONMENT_CONFIG, AGENT_CONFIG } from '../parameter';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 
 export class AgentPreparationToolkitStack extends cdk.Stack {
@@ -119,6 +121,76 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         },
         agentConfig: {
           description: 'Support agent sample',
+          userInput: true,
+          codeInterpreter: false,
+        }
+      });
+    }
+
+    // ----------------- Legal Agent の 実装例 -----------------
+    if (AGENT_CONFIG.legalAgent.enabled) {
+      const contractTemplateBucket = new s3.Bucket(this, 'ContractTemplateBucket',{
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        enforceSSL: true,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        autoDeleteObjects: true,
+        serverAccessLogsPrefix: 'AccessLogs/',
+      })
+      new s3deploy.BucketDeployment(this,'ContractTemplateBucketDeployment',{
+        sources: [s3deploy.Source.asset('./data-source/legal/templates/')],
+        destinationBucket: contractTemplateBucket,
+        destinationKeyPrefix: ''
+      })
+      const legalAgentName = 'legal-agent';
+      new AgentBuilder(this, 'LegalAgent', {
+        prefix: prefix,
+        region: region,
+        accountId: accountId,
+        modelId: modelId,
+        prompts: {
+          instruction: promptManager.getPrompts(modelId, legalAgentName).instruction,
+          PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+          ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
+          KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
+          POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
+        },
+        agentName: legalAgentName,
+        knowledgeBaseConfig: {
+          dataSources: [
+            {
+              dataDir: './data-source/legal/docs/',
+              name: legalAgentName,
+              description: '契約書の種類や内容が説明されている',
+            }
+          ],
+          name: legalAgentName,
+          description: '契約書の種類や内容が説明されている Knowledge Base',
+          embeddingModelId: 'amazon.titan-embed-text-v2:0'
+        },
+        actionGroupConfig: {
+          openApiSchemaPath: './action-groups/legal/schema/api-schema.yaml',
+          lambdaFunctionPath: './action-groups/legal/lambda/',
+          lambdaPolicies: [
+            new cdk.aws_iam.PolicyStatement({
+              actions: [
+                's3:ListBucket',
+                's3:GetObject',
+                's3:PutObject',
+                's3:DeleteObject',
+              ],
+              resources: [
+                contractTemplateBucket.bucketArn,
+                contractTemplateBucket.bucketArn + '/*'
+              ],
+            }),
+          ],
+          lambdaEnvironment: {
+            CONTRACT_BUCKET: contractTemplateBucket.bucketName,
+          }
+        },
+        agentConfig: {
+          description: 'Legal agent sample',
           userInput: true,
           codeInterpreter: false,
         }
