@@ -150,9 +150,9 @@ export const BEDROCK_LOGS_CONFIG: BedrockLogsConfig = {
 ## Generative AI Use Cases JP (通称: GenU) 連携
 このリポジトリに GUI は無いですが、[AWS マネジメントコンソールの GUI](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/agents) を使うことができる他、[GenU](https://github.com/aws-samples/generative-ai-use-cases-jp) を利用することで、簡単に GUI を作成できます。  
 (上記のスクリーンショットは GenU を用いたものです)  
-`1_sync.py` を実行したあと、`genu.json` という json ファイルが出来上がります。  
+`1_sync.py` を実行したあと、`genu.txt` というテキストファイルが出来上がります。  
 GenU の `./packages/cdk/parameter.ts` もしくは `./packages/cdk/cdk.json` の agents パラメータの配列の中に json ファイルの中身を格納してください。  
-`./packages/cdk/parameter.ts` を使用する場合は key のダブルクオーテーションは削除しなければならない点(value は必要)に注意してください。  
+`./packages/cdk/cdk.json` を使用する場合は key のダブルクオーテーションを追加する必要がある点に注意してください。  
 詳細は [手動で作成した Agent を追加](https://github.com/aws-samples/generative-ai-use-cases-jp/blob/main/docs/DEPLOY_OPTION.md#%E6%89%8B%E5%8B%95%E3%81%A7%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F-agent-%E3%82%92%E8%BF%BD%E5%8A%A0) を参照ください。
 
 ## Bedrock Engineer 連携

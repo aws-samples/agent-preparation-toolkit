@@ -7,9 +7,17 @@ paths:
   /list:
     get:
       summary: 'List contract documents'
-      description: "Lists all files in the contract bucket with their last modified dates"
+      description: "Lists all files in the contract bucket with their last modified dates. Can filter by file name."
       operationId: "listFiles"
       x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: text
+          in: query
+          description: '契約書の種類名を入れる'
+          required: true
+          schema:
+            type: string
+            example: "contract"
       responses:
         '200':
           description: "Files listed successfully"
@@ -100,6 +108,17 @@ paths:
                     type: string
                 example:
                   error: "File key not provided"
+        '404':
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "File not found in S3 bucket"
         '500':
           description: "Internal Server Error"
           content:

@@ -66,7 +66,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         knowledgeBaseConfig: {
           dataSources: [
             {
-              dataDir: './data-source/hr/vacation.md',
+              dataDir: './data-source/hr/',
               name: hrAgentName,
               description: 'Human resource data source',
             }
@@ -106,7 +106,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         knowledgeBaseConfig: {
           dataSources: [
             {
-              dataDir: './data-source/product-support/error_code.md',
+              dataDir: './data-source/product-support/',
               name: productSupportAgentName,
               description: 'Support data source sample',
             }
@@ -129,6 +129,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
 
     // ----------------- Legal Agent の 実装例 -----------------
     if (AGENT_CONFIG.legalAgent.enabled) {
+      const DOC_DATA_PREFIX = 'data/';
       const contractTemplateBucket = new s3.Bucket(this, 'ContractTemplateBucket',{
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
         encryption: s3.BucketEncryption.S3_MANAGED,
@@ -140,7 +141,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       new s3deploy.BucketDeployment(this,'ContractTemplateBucketDeployment',{
         sources: [s3deploy.Source.asset('./data-source/legal/templates/')],
         destinationBucket: contractTemplateBucket,
-        destinationKeyPrefix: ''
+        destinationKeyPrefix: DOC_DATA_PREFIX
       })
       const legalAgentName = 'legal-agent';
       new AgentBuilder(this, 'LegalAgent', {
@@ -150,10 +151,10 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         modelId: modelId,
         prompts: {
           instruction: promptManager.getPrompts(modelId, legalAgentName).instruction,
-          PRE_PROCESSING: promptManager.getPrompts(modelId).preProcessing,
+          PRE_PROCESSING: promptManager.getPrompts(modelId, legalAgentName).preProcessing,
           ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
           KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
-          POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
+          POST_PROCESSING: promptManager.getPrompts(modelId, legalAgentName).postProcessing
         },
         agentName: legalAgentName,
         knowledgeBaseConfig: {
@@ -187,6 +188,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           ],
           lambdaEnvironment: {
             CONTRACT_BUCKET: contractTemplateBucket.bucketName,
+            DOC_DATA_PREFIX: DOC_DATA_PREFIX
           }
         },
         agentConfig: {

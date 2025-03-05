@@ -3,8 +3,9 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-# S3クライアントの初期化
 s3_client = boto3.client('s3')
+bucket_name = os.environ.get('CONTRACT_BUCKET')
+doc_data_prefix = os.environ.get('DOC_DATA_PREFIX')
 
 
 def lambda_handler(event, context):
@@ -12,7 +13,7 @@ def lambda_handler(event, context):
         print(f"Received event: {json.dumps(event)}")
 
         # 環境変数からバケット名を取得
-        bucket_name = os.environ.get('CONTRACT_BUCKET')
+
         if not bucket_name:
             error_body = {'error': 'CONTRACT_BUCKET environment variable is not set'}
             response_body = {'application/json': {'body': error_body}}
@@ -30,22 +31,22 @@ def lambda_handler(event, context):
         # APIパスを取得
         api_path = event.get('apiPath', '')
 
-        # /list エンドポイント - バケット内のすべてのファイルとその更新日を返す
+        # パラメータからファイル名を取得（/listと/getの両方で使用）
+        parameters = event.get('parameters', [])
+        file_name = None
+
+        for param in parameters:
+            if param.get('name') == 'text':
+                file_name = param.get('value', '')
+                break
+
+        # /list エンドポイント - バケット内のファイルとその更新日を返す
         if api_path == '/list':
-            return list_files(bucket_name, event)
+            return list_files(bucket_name, event, file_name)
 
         # /get エンドポイント - 指定されたキーのファイルの署名付きURLを返す
         elif api_path == '/get':
-            # パラメータからキーを取得
-            parameters = event.get('parameters', [])
-            file_key = None
-
-            for param in parameters:
-                if param.get('name') == 'text':
-                    file_key = param.get('value', '')
-                    break
-
-            if not file_key:
+            if not file_name:
                 error_body = {'error': 'File key not provided'}
                 response_body = {'application/json': {'body': error_body}}
                 print(f"Error response: {response_body}")
@@ -59,7 +60,7 @@ def lambda_handler(event, context):
                 }
                 return {'messageVersion': '1.0', 'response': action_response}
 
-            return get_signed_url(bucket_name, file_key, event)
+            return get_signed_url(bucket_name, file_name, event)
 
         else:
             error_body = {'error': f'Invalid API path: {api_path}'}
@@ -90,17 +91,19 @@ def lambda_handler(event, context):
         return {'messageVersion': '1.0', 'response': action_response}
 
 
-def list_files(bucket_name, event):
-    """S3バケット内のすべてのファイルとその更新日を返す"""
+def list_files(bucket_name, event, file_name=None):
+    """S3バケット内のファイルとその更新日を返す。file_nameが指定された場合は一致するファイルのみを返す"""
     try:
-        response = s3_client.list_objects_v2(Bucket=bucket_name)
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=doc_data_prefix)
 
         files = []
         if 'Contents' in response:
             for item in response['Contents']:
-                # ISO形式の日時文字列に変換
-                last_modified = item['LastModified'].isoformat()
-                files.append({'key': item['Key'], 'lastModified': last_modified})
+                # ファイル名が指定されていない、または指定されたファイル名に一致する場合のみ追加
+                if file_name is None or file_name in item['Key']:
+                    # ISO形式の日時文字列に変換
+                    last_modified = item['LastModified'].isoformat()
+                    files.append({'key': item['Key'], 'lastModified': last_modified})
 
         body = {'files': files}
         response_body = {'application/json': {'body': body}}
@@ -134,7 +137,7 @@ def get_signed_url(bucket_name, file_key, event):
     """指定されたキーのファイルの署名付きURLを生成して返す"""
     try:
         # 署名付きURLの有効期限（秒）
-        expiration = 300  # 1時間
+        expiration = 3600  # 60分
 
         # 署名付きURLを生成
         signed_url = s3_client.generate_presigned_url(
