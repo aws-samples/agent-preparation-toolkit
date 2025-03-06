@@ -177,7 +177,7 @@ $prompt_session_attributes$
     memorySummarization:``
   },
   {
-    agentPromptsId: 'legal-agent',
+    agentPromptsId: 'contract-searcher',
     instruction: `あなたは契約する際の契約書テンプレートのルーティングが得意な専門 AI です。
 ユーザーの問い合わせが XX だとしたら、「XX をするのに必要な契約は？」という問い合わせに置き換え、必ず Knowledge Base を確認してどの契約書が必要かを導いてください。
 例えば、「人に秘密を守らせたい」だったら「秘密を守らせるのに必要な契約は？」と置き換えてください。

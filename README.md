@@ -122,6 +122,16 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
   * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
   * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
 
+### Contract Searcher
+契約書を探す Agent です。  
+やりたいことを入力すると結ぶべき契約書を教えてテンプレートを出してくれます。  
+試しに `人に仕事を任せたい` と入力すると、どんな契約書が必要かを教えてくれます。  
+そこから業務委託契約書に誘導すると、業務委託契約書のテンプレートを出してくれます。  
+サンプルのデータには業務委託契約書が 2 つ格納されていますが、より新しいものを正としてテンプレートダウンロード URL を出力します。
+![contract-searcher-sample](./image/contract-searcher-sample.png)
+![contract-searcher-architecture](./image/contract-searcher.png)
+
+
 ### Bedrock Logs Watcher
 Amazon Bedrock では[モデルの呼び出しログを S3 に保存することができます](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)。  
 

@@ -127,8 +127,8 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
       });
     }
 
-    // ----------------- Legal Agent の 実装例 -----------------
-    if (AGENT_CONFIG.legalAgent.enabled) {
+    // ----------------- Contract Searcher の 実装例 -----------------
+    if (AGENT_CONFIG.contractSearcher.enabled) {
       const DOC_DATA_PREFIX = 'data/';
       const contractTemplateBucket = new s3.Bucket(this, 'ContractTemplateBucket',{
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -139,39 +139,39 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
         serverAccessLogsPrefix: 'AccessLogs/',
       })
       new s3deploy.BucketDeployment(this,'ContractTemplateBucketDeployment',{
-        sources: [s3deploy.Source.asset('./data-source/legal/templates/')],
+        sources: [s3deploy.Source.asset('./data-source/contract-searcher/templates/')],
         destinationBucket: contractTemplateBucket,
         destinationKeyPrefix: DOC_DATA_PREFIX
       })
-      const legalAgentName = 'legal-agent';
-      new AgentBuilder(this, 'LegalAgent', {
+      const contractSearcherName = 'contract-searcher';
+      new AgentBuilder(this, 'ContractSearcher', {
         prefix: prefix,
         region: region,
         accountId: accountId,
         modelId: modelId,
         prompts: {
-          instruction: promptManager.getPrompts(modelId, legalAgentName).instruction,
-          PRE_PROCESSING: promptManager.getPrompts(modelId, legalAgentName).preProcessing,
+          instruction: promptManager.getPrompts(modelId, contractSearcherName).instruction,
+          PRE_PROCESSING: promptManager.getPrompts(modelId, contractSearcherName).preProcessing,
           ORCHESTRATION: promptManager.getPrompts(modelId).orchestration,
           KNOWLEDGE_BASE_RESPONSE_GENERATION: promptManager.getPrompts(modelId).knowledgeBaseResponseGeneration,
-          POST_PROCESSING: promptManager.getPrompts(modelId, legalAgentName).postProcessing
+          POST_PROCESSING: promptManager.getPrompts(modelId, contractSearcherName).postProcessing
         },
-        agentName: legalAgentName,
+        agentName: contractSearcherName,
         knowledgeBaseConfig: {
           dataSources: [
             {
-              dataDir: './data-source/legal/docs/',
-              name: legalAgentName,
+              dataDir: './data-source/contract-searcher/docs/',
+              name: contractSearcherName,
               description: '契約書の種類や内容が説明されている',
             }
           ],
-          name: legalAgentName,
+          name: contractSearcherName,
           description: '契約書の種類や内容が説明されている Knowledge Base',
           embeddingModelId: 'amazon.titan-embed-text-v2:0'
         },
         actionGroupConfig: {
-          openApiSchemaPath: './action-groups/legal/schema/api-schema.yaml',
-          lambdaFunctionPath: './action-groups/legal/lambda/',
+          openApiSchemaPath: './action-groups/contract-searcher/schema/api-schema.yaml',
+          lambdaFunctionPath: './action-groups/contract-searcher/lambda/',
           lambdaPolicies: [
             new cdk.aws_iam.PolicyStatement({
               actions: [
@@ -192,7 +192,7 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           }
         },
         agentConfig: {
-          description: 'Legal agent sample',
+          description: 'Contract Searcher sample',
           userInput: true,
           codeInterpreter: false,
         }
