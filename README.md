@@ -16,8 +16,8 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 
 > [!TIP]
 > 後述の内包している Agents は`parameter.ts` の各 Agent の設定の enabled の部分を `true` もしくは `false` にすることで有効無効の設定をした上でデプロイできます。  
-> bedrock-logs-watcher だけは後述する別途の設定が必要なことに注意してください。  
-> Amazon OpenSearch Service Serverless を利用する Agents は初期設定で `false` にしています。
+> デフォルトでは python-coder だけ有効化されています。
+> bedrock-logs-watcher は後述する別途の設定が必要なことに注意してください。  
 
 ```typescript
   pythonCoder: {
@@ -33,7 +33,7 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
     enabled: false,
   },
   bedrockLogWatcher: {
-    enabled: true,
+    enabled: false,
     config: {
       bedrockLogsBucket: '',
       bedrockLogsPrefix: '',

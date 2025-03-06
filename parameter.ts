@@ -51,7 +51,7 @@ export const AGENT_CONFIG: AgentConfig = {
     enabled: false,
   },
   bedrockLogWatcher: {
-    enabled: true,
+    enabled: false,
     config: {
       bedrockLogsBucket: '', // Bedrock のログを保存しているバケット。設定していない場合はマネジメントコンソールから設定すること
       bedrockLogsPrefix: '', //デフォルトだとこちら → /AWSLogs/{ACCOUNT}/BedrockModelInvocationLogs/{REGION}/
