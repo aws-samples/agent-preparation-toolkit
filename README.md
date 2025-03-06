@@ -17,7 +17,7 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
 > [!TIP]
 > 後述の内包している Agents は`parameter.ts` の各 Agent の設定の enabled の部分を `true` もしくは `false` にすることで有効無効の設定をした上でデプロイできます。  
 > bedrock-logs-watcher だけは後述する別途の設定が必要なことに注意してください。  
-> Amazon OpenSearch Service Serverless を仕様する Agents は初期設定で `false` にしています。
+> Amazon OpenSearch Service Serverless を利用する Agents は初期設定で `false` にしています。
 
 ```typescript
   pythonCoder: {
@@ -27,6 +27,9 @@ Amazon Bedrock Agents を使ってすぐに Agent を動かすことができる
     enabled: false,
   },
   productSupportAgent: {
+    enabled: false,
+  },
+  contractSearcher: {
     enabled: false,
   },
   bedrockLogWatcher: {
@@ -122,6 +125,16 @@ Knowledge Base に会社の年休付与規則と Database (Lambda 内で動く S
   * [デフォルトプロンプト](./lib/prompts/default-prompts.ts)
   * [Human Resource Agent 用プロンプト](./lib/prompts/custom-prompts.ts)
 
+### Contract Searcher
+契約書を探す Agent です。  
+やりたいことを入力すると結ぶべき契約書を教えてテンプレートを出してくれます。  
+試しに `人に仕事を任せたい` と入力すると、どんな契約書が必要かを教えてくれます。  
+そこから業務委託契約書に誘導すると、業務委託契約書のテンプレートを出してくれます。  
+サンプルのデータには業務委託契約書が 2 つ格納されていますが、より新しいものを正としてテンプレートダウンロード URL を出力します。
+![contract-searcher-sample](./image/contract-searcher-sample.png)
+![contract-searcher-architecture](./image/contract-searcher.png)
+
+
 ### Bedrock Logs Watcher
 Amazon Bedrock では[モデルの呼び出しログを S3 に保存することができます](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)。  
 
@@ -150,9 +163,9 @@ export const BEDROCK_LOGS_CONFIG: BedrockLogsConfig = {
 ## Generative AI Use Cases JP (通称: GenU) 連携
 このリポジトリに GUI は無いですが、[AWS マネジメントコンソールの GUI](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/agents) を使うことができる他、[GenU](https://github.com/aws-samples/generative-ai-use-cases-jp) を利用することで、簡単に GUI を作成できます。  
 (上記のスクリーンショットは GenU を用いたものです)  
-`1_sync.py` を実行したあと、`genu.json` という json ファイルが出来上がります。  
+`1_sync.py` を実行したあと、`genu.txt` というテキストファイルが出来上がります。  
 GenU の `./packages/cdk/parameter.ts` もしくは `./packages/cdk/cdk.json` の agents パラメータの配列の中に json ファイルの中身を格納してください。  
-`./packages/cdk/parameter.ts` を使用する場合は key のダブルクオーテーションは削除しなければならない点(value は必要)に注意してください。  
+`./packages/cdk/cdk.json` を使用する場合は key のダブルクオーテーションを追加する必要がある点に注意してください。  
 詳細は [手動で作成した Agent を追加](https://github.com/aws-samples/generative-ai-use-cases-jp/blob/main/docs/DEPLOY_OPTION.md#%E6%89%8B%E5%8B%95%E3%81%A7%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F-agent-%E3%82%92%E8%BF%BD%E5%8A%A0) を参照ください。
 
 ## Bedrock Engineer 連携

@@ -27,6 +27,7 @@ def main():
         'dev-product-support-agent': 'E-03',
         'dev-python-coder': '３次元ベクトルの外積を計算するコードを書いて',
         'dev-bedrock-logs-watcher': 'input token が一番多い人を教えて',
+        'dev-contract-searcher': '人に仕事を依頼したい',
     }
     for doc in documents:
         prompt = prompts[doc['agentName']]

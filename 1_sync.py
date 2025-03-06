@@ -110,8 +110,13 @@ class AwsOperations:
             }
             for id_info in ids
         ]
-        with open('genu.json', 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(documents, indent=2))
+        with open('genu.txt', 'wt', encoding='utf-8') as f:
+            f.write(
+                json.dumps(documents, indent=2)
+                .replace('"displayName"', 'displayName')
+                .replace('"agentId"', 'agentId')
+                .replace('"aliasId"', 'aliasId')
+            )
 
     def main(self):
         args = self.parse_args()

@@ -8,7 +8,7 @@ node_modules
 cdk.out
 
 agent_ids.json
-genu.json
+genu.text
 
 __pycache__/*
 image/~$architecture.pptx

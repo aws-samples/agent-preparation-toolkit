@@ -28,6 +28,9 @@ export const AgentConfigSchema = z.object({
   productSupportAgent: z.object({
     enabled: z.boolean(),
   }),
+  contractSearcher: z.object({
+    enabled: z.boolean(),
+  }),
   bedrockLogWatcher: z.object({
     enabled: z.boolean(),
     config: BedrockLogsSchema.required()
@@ -44,11 +47,14 @@ export const AGENT_CONFIG: AgentConfig = {
   productSupportAgent: {
     enabled: false,
   },
+  contractSearcher: {
+    enabled: false,
+  },
   bedrockLogWatcher: {
     enabled: true,
     config: {
       bedrockLogsBucket: '', // Bedrock のログを保存しているバケット。設定していない場合はマネジメントコンソールから設定すること
       bedrockLogsPrefix: '', //デフォルトだとこちら → /AWSLogs/{ACCOUNT}/BedrockModelInvocationLogs/{REGION}/
     },
-  },
+  }
 };

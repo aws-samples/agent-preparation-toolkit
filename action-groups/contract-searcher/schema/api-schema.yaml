@@ -1,0 +1,140 @@
+openapi: 3.0.0
+info:
+  title: 'Contract Document API'
+  version: 1.0.0
+  description: "API for accessing contract documents in S3"
+paths:
+  /list:
+    get:
+      summary: 'List contract documents'
+      description: "Lists all files in the contract bucket with their last modified dates. Can filter by file name."
+      operationId: "listFiles"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: text
+          in: query
+          description: '契約書の種類名を入れる'
+          required: true
+          schema:
+            type: string
+            example: "contract"
+      responses:
+        '200':
+          description: "Files listed successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: "File key in S3"
+                        lastModified:
+                          type: string
+                          format: date-time
+                          description: "Last modified timestamp in ISO format"
+                example:
+                  files: [
+                    {
+                      "key": "contract-2023.pdf",
+                      "lastModified": "2023-01-15T10:30:00Z"
+                    },
+                    {
+                      "key": "agreement-2022.pdf",
+                      "lastModified": "2022-12-01T09:15:00Z"
+                    }
+                  ]
+        '500':
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "Failed to list files from S3 bucket"
+      security:
+        - api_key: []
+  /get:
+    get:
+      summary: 'Get contract document'
+      description: "Generates a pre-signed URL for downloading a specific document from the contract bucket"
+      operationId: "getSignedUrl"
+      x-requireConfirmation: "DISABLED"
+      parameters:
+        - name: text
+          in: query
+          description: 'File key in S3 bucket'
+          required: true
+          schema:
+            type: string
+            example: "contract-2023.pdf"
+      responses:
+        '200':
+          description: "Pre-signed URL generated successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signedUrl:
+                    type: string
+                    description: "Pre-signed URL for downloading the file"
+                  expiresIn:
+                    type: integer
+                    description: "URL expiration time in seconds"
+                  fileName:
+                    type: string
+                    description: "Name of the requested file"
+                example:
+                  signedUrl: "https://bucket-name.s3.amazonaws.com/contract-2023.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=..."
+                  expiresIn: 300
+                  fileName: "contract-2023.pdf"
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "File key not provided"
+        '404':
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "File not found in S3 bucket"
+        '500':
+          description: "Internal Server Error"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                example:
+                  error: "Failed to generate pre-signed URL"
+      security:
+        - api_key: []
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header
