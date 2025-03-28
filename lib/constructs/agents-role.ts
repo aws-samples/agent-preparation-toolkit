@@ -8,7 +8,6 @@ export interface AgentRoleProps{
   region: string;
   agentName: string;
   knowledgeBaseIds?: string[];
-  roleName: string;
   lambdaFunctions: lambda.Function[];
   s3Buckets: s3.Bucket[];
 }
@@ -47,7 +46,7 @@ export class AgentRole extends Construct {
     });
 
     const agentRole = new iam.Role(this, 'AgentRole', {
-      roleName: `AmazonBedrockExecutionRoleForAgents_${props.roleName}`,
+      roleName: `AmazonBedrockExecutionRoleForAgents_${props.agentName}`,
       assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com'),
       managedPolicies: [bedrockPolicy],
     });

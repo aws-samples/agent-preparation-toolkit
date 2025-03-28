@@ -32,7 +32,8 @@ export class KnowledgeBase extends Construct {
   public readonly dataSourceIds: string[] = [];
   constructor(scope: Construct, id: string, props: KnowledgeBaseProps) {
     super(scope, id);
-    const vectorIndexName = 'bedrock-knowledge-base-default';
+    const vectorIndexName = `${props.prefix}bedrock-knowledge-base-default`;
+    const collectionName = `${props.prefix}${props.name}`;
     const metadataField = 'AMAZON_BEDROCK_METADATA';
     const vectorField = 'bedrock-knowledge-base-default-vector';
     const textField = 'AMAZON_BEDROCK_TEXT_CHUNK';
@@ -56,7 +57,7 @@ export class KnowledgeBase extends Construct {
 
     const knowledgeBaseCollection = new KnowledgeBaseCollection(this, 'KnowledgeBaseCollection', {
       prefix: props.prefix,
-      collectionName: props.name,
+      collectionName: collectionName,
       vectorIndexName: vectorIndexName,
       embeddingModelId: props.embeddingModelId,
       knowledgeBaseRoleArn: knowledgeBaseRole.arn,
