@@ -9,8 +9,8 @@ export interface AgentRoleProps{
   agentName: string;
   knowledgeBaseIds?: string[];
   roleName: string;
-  lambdaFunctions: lambda.Function[];
-  s3Buckets: s3.Bucket[];
+  lambdaFunctions?: lambda.Function[];
+  s3Buckets?: s3.Bucket[];
 }
 
 export class AgentRole extends Construct {
@@ -52,12 +52,16 @@ export class AgentRole extends Construct {
       managedPolicies: [bedrockPolicy],
     });
 
-    for (const lambdaFunction of props.lambdaFunctions){
-      lambdaFunction.grantInvoke(agentRole);
+    if (props.lambdaFunctions && props.lambdaFunctions.length > 0) {
+      for (const lambdaFunction of props.lambdaFunctions) {
+        lambdaFunction.grantInvoke(agentRole);
+      }
     }
-
-    for (const bucket of props.s3Buckets){
-      bucket.grantRead(agentRole);
+    
+    if (props.s3Buckets && props.s3Buckets.length > 0) {
+      for (const bucket of props.s3Buckets) {
+        bucket.grantRead(agentRole);
+      }
     }
 
     this.roleArn = agentRole.roleArn

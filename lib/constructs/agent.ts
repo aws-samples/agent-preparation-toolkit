@@ -11,7 +11,7 @@ export interface AgentProps {
   readonly region: string;
   readonly name: string;
   readonly modelId: ModelId;
-  readonly actionGroups: ActionGroup[];
+  readonly actionGroups?: ActionGroup[];
   readonly userInput: boolean;
   readonly codeInterpreter: boolean;
   readonly description?: string;
@@ -43,8 +43,10 @@ export class Agent extends Construct {
       agentName: `${props.prefix}${props.name}`,
       knowledgeBaseIds: props.knowledgeBases ? props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId): [],
       roleName: props.name,
-      lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
-      s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
+      ...(props.actionGroups && {
+        lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
+        s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
+      })
     });
 
     const agent = new bedrock.CfnAgent(this, `${props.prefix}Agent`, {
@@ -57,28 +59,30 @@ export class Agent extends Construct {
       })) : [],
       foundationModel: props.modelId,
       idleSessionTtlInSeconds:600,
-      actionGroups: [
-        ...props.actionGroups.map(actionGroup => ({
-          actionGroupName: actionGroup.actionGroupName,
-          actionGroupExecutor: {
-            lambda: actionGroup.lambdaFunction.functionArn
-          },
-          apiSchema: {
-            s3: {
-              s3BucketName: actionGroup.apiSchemaBucketName,
-              s3ObjectKey: actionGroup.apiSchemaObjectKey,
+      ...(props.actionGroups && {
+        actionGroups: [
+          ...props.actionGroups.map(actionGroup => ({
+            actionGroupName: actionGroup.actionGroupName,
+            actionGroupExecutor: {
+              lambda: actionGroup.lambdaFunction.functionArn
             },
-          },
-        })),
-        ...(props.userInput ? [{
-          actionGroupName: 'UserInput',
-          parentActionGroupSignature: 'AMAZON.UserInput',
-        }] : []),
-        ...(props.codeInterpreter ? [{
-          actionGroupName: 'CodeInterpreter',
-          parentActionGroupSignature: 'AMAZON.CodeInterpreter',
-        }] : [])
-      ],
+            apiSchema: {
+              s3: {
+                s3BucketName: actionGroup.apiSchemaBucketName,
+                s3ObjectKey: actionGroup.apiSchemaObjectKey,
+              },
+            },
+          })),
+          ...(props.userInput ? [{
+            actionGroupName: 'UserInput',
+            parentActionGroupSignature: 'AMAZON.UserInput',
+          }] : []),
+          ...(props.codeInterpreter ? [{
+            actionGroupName: 'CodeInterpreter',
+            parentActionGroupSignature: 'AMAZON.CodeInterpreter',
+          }] : [])
+        ],
+      }),
       autoPrepare: true,
       description: props.description || '',
       promptOverrideConfiguration:{
@@ -159,13 +163,15 @@ export class Agent extends Construct {
     });
     agent.node.addDependency(agentRole);
 
-    for (const actionGroup of props.actionGroups){
-      actionGroup.lambdaFunction.addPermission('bedrock-agents',{
-        principal: new iam.ServicePrincipal('bedrock.amazonaws.com'),
-        action: 'lambda:InvokeFunction',
-        sourceArn: agent.attrAgentArn
-      })
-    }
+    if (props.actionGroups && props.actionGroups.length > 0){
+      for (const actionGroup of props.actionGroups){
+        actionGroup.lambdaFunction.addPermission('bedrock-agents',{
+          principal: new iam.ServicePrincipal('bedrock.amazonaws.com'),
+          action: 'lambda:InvokeFunction',
+          sourceArn: agent.attrAgentArn
+        })
+      }
+    } 
 
     this.agentName = agent.agentName
     this.agentId = agent.attrAgentId;
