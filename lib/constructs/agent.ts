@@ -42,7 +42,6 @@ export class Agent extends Construct {
       region: props.region,
       agentName: `${props.prefix}${props.name}`,
       knowledgeBaseIds: props.knowledgeBases ? props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId): [],
-      roleName: props.name,
       lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
       s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
     });
