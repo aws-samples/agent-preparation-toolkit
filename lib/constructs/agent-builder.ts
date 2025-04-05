@@ -36,7 +36,7 @@ export interface AgentBuilderProps {
     description: string;
     embeddingModelId: EmbeddingModelId;
   };
-  actionGroupConfig: {
+  actionGroupConfig?: {
     openApiSchemaPath: OpenApiPath;
     lambdaFunctionPath: string;
     lambdaPolicies?: iam.PolicyStatement[];
@@ -70,13 +70,15 @@ export class AgentBuilder extends Construct {
     }
 
     // Action Group の作成
-    this.actionGroup = new ActionGroup(this, 'ActionGroup', {
-      openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
-      lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
-      actionGroupName: props.agentName,
-      lambdaPolicies: props.actionGroupConfig.lambdaPolicies,
-      lambdaEnvironment: props.actionGroupConfig.lambdaEnvironment
-    });
+    if (props.actionGroupConfig){
+      this.actionGroup = new ActionGroup(this, 'ActionGroup', {
+        openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
+        lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
+        actionGroupName: props.agentName,
+        lambdaPolicies: props.actionGroupConfig.lambdaPolicies,
+        lambdaEnvironment: props.actionGroupConfig.lambdaEnvironment
+      });
+    }
 
     // Agent の作成
     this.agent = new Agent(this, 'Agent', {
@@ -85,9 +87,11 @@ export class AgentBuilder extends Construct {
       region: props.region,
       name: props.agentName,
       modelId: props.modelId,
-      actionGroups: [
-        this.actionGroup,
-      ],
+      ...(this.actionGroup && {
+        actionGroups: [
+          this.actionGroup,
+        ]
+      }),
       userInput: props.agentConfig.userInput,
       codeInterpreter: props.agentConfig.codeInterpreter,
       description: props.agentConfig.description,
@@ -101,7 +105,9 @@ export class AgentBuilder extends Construct {
         ]
       })
     });
-    this.agent.node.addDependency(this.actionGroup.bucketDeployment);
+    if(props.actionGroupConfig){
+      this.agent.node.addDependency(this.actionGroup.bucketDeployment);
+    }
 
     // 出力の作成
     new cdk.CfnOutput(this, `${this.agent.agentName}AgentId`, {
