@@ -1,5 +1,3 @@
-// constructs/agent-builder.ts
-
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { KnowledgeBase } from './knowledge-base';
@@ -36,12 +34,12 @@ export interface AgentBuilderProps {
     description: string;
     embeddingModelId: EmbeddingModelId;
   };
-  actionGroupConfig?: {
+  actionGroupConfigs?: {
     openApiSchemaPath: OpenApiPath;
     lambdaFunctionPath: string;
     lambdaPolicies?: iam.PolicyStatement[];
     lambdaEnvironment?: lambdaEnvironment;
-  };
+  }[];
   agentConfig: {
     description: string;
     userInput: boolean;
@@ -52,7 +50,7 @@ export interface AgentBuilderProps {
 export class AgentBuilder extends Construct {
   public readonly agent: Agent;
   public readonly knowledgeBase: KnowledgeBase;
-  public readonly actionGroup: ActionGroup;
+  public readonly actionGroups: ActionGroup[] = [];
 
   constructor(scope: Construct, id: string, props: AgentBuilderProps) {
     super(scope, id);
@@ -69,14 +67,17 @@ export class AgentBuilder extends Construct {
       });
     }
 
-    // Action Group の作成
-    if (props.actionGroupConfig){
-      this.actionGroup = new ActionGroup(this, 'ActionGroup', {
-        openApiSchemaPath: props.actionGroupConfig.openApiSchemaPath,
-        lambdaFunctionPath: props.actionGroupConfig.lambdaFunctionPath,
-        actionGroupName: props.agentName,
-        lambdaPolicies: props.actionGroupConfig.lambdaPolicies,
-        lambdaEnvironment: props.actionGroupConfig.lambdaEnvironment
+    // Action Groups の作成
+    if (props.actionGroupConfigs && props.actionGroupConfigs.length > 0){
+      props.actionGroupConfigs.forEach((config, index) => {
+        const actionGroup = new ActionGroup(this, `ActionGroup-${index}`, {
+          openApiSchemaPath: config.openApiSchemaPath,
+          lambdaFunctionPath: config.lambdaFunctionPath,
+          actionGroupName: `${props.agentName}-${index}`,
+          lambdaPolicies: config.lambdaPolicies,
+          lambdaEnvironment: config.lambdaEnvironment
+        });
+        this.actionGroups.push(actionGroup);
       });
     }
 
@@ -87,10 +88,8 @@ export class AgentBuilder extends Construct {
       region: props.region,
       name: props.agentName,
       modelId: props.modelId,
-      ...(this.actionGroup && {
-        actionGroups: [
-          this.actionGroup,
-        ]
+      ...(this.actionGroups.length > 0 && {
+        actionGroups: this.actionGroups
       }),
       userInput: props.agentConfig.userInput,
       codeInterpreter: props.agentConfig.codeInterpreter,
@@ -105,8 +104,12 @@ export class AgentBuilder extends Construct {
         ]
       })
     });
-    if(props.actionGroupConfig){
-      this.agent.node.addDependency(this.actionGroup.bucketDeployment);
+    
+    // ActionGroup への依存関係を追加
+    if(this.actionGroups.length > 0){
+      this.actionGroups.forEach(actionGroup => {
+        this.agent.node.addDependency(actionGroup.bucketDeployment);
+      });
     }
 
     // 出力の作成
