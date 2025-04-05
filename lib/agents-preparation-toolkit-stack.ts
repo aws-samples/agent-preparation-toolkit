@@ -35,10 +35,12 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           POST_PROCESSING: promptManager.getPrompts(modelId, PythonCoderName).postProcessing
         },
         agentName: PythonCoderName,
-        actionGroupConfig: {
-          openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
-          lambdaFunctionPath: './action-groups/python-coder/lambda/',
-        },
+        actionGroupConfigs: [
+          {
+            openApiSchemaPath: './action-groups/python-coder/schema/api-schema.yaml',
+            lambdaFunctionPath: './action-groups/python-coder/lambda/',
+          }
+        ],
         agentConfig: {
           description: 'python coder agent sample',
           userInput: true,
@@ -75,10 +77,12 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           description: '人事規則が格納されている KnowledgeBase',
           embeddingModelId: 'amazon.titan-embed-text-v2:0'
         },
-        actionGroupConfig: {
-          openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
-          lambdaFunctionPath: './action-groups/hr/lambda/',
-        },
+        actionGroupConfigs: [
+          {
+            openApiSchemaPath: './action-groups/hr/schema/api-schema.yaml',
+            lambdaFunctionPath: './action-groups/hr/lambda/',
+          },
+        ],
         agentConfig: {
           description: 'Human resource agent sample',
           userInput: true,
@@ -115,10 +119,12 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           description: 'エラーコードとその詳細が格納されている KnowledgeBase',
           embeddingModelId: 'amazon.titan-embed-text-v2:0'
         },
-        actionGroupConfig: {
-          openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
-          lambdaFunctionPath: './action-groups/product-support/lambda/',
-        },
+        actionGroupConfigs: [
+          {
+            openApiSchemaPath: './action-groups/product-support/schema/api-schema.yaml',
+            lambdaFunctionPath: './action-groups/product-support/lambda/',
+          }
+        ],
         agentConfig: {
           description: 'Support agent sample',
           userInput: true,
@@ -169,28 +175,30 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
           description: '契約書の種類や内容が説明されている Knowledge Base',
           embeddingModelId: 'amazon.titan-embed-text-v2:0'
         },
-        actionGroupConfig: {
-          openApiSchemaPath: './action-groups/contract-searcher/schema/api-schema.yaml',
-          lambdaFunctionPath: './action-groups/contract-searcher/lambda/',
-          lambdaPolicies: [
-            new cdk.aws_iam.PolicyStatement({
-              actions: [
-                's3:ListBucket',
-                's3:GetObject',
-                's3:PutObject',
-                's3:DeleteObject',
-              ],
-              resources: [
-                contractTemplateBucket.bucketArn,
-                contractTemplateBucket.bucketArn + '/*'
-              ],
-            }),
-          ],
-          lambdaEnvironment: {
-            CONTRACT_BUCKET: contractTemplateBucket.bucketName,
-            DOC_DATA_PREFIX: DOC_DATA_PREFIX
+        actionGroupConfigs: [
+          {
+            openApiSchemaPath: './action-groups/contract-searcher/schema/api-schema.yaml',
+            lambdaFunctionPath: './action-groups/contract-searcher/lambda/',
+            lambdaPolicies: [
+              new cdk.aws_iam.PolicyStatement({
+                actions: [
+                  's3:ListBucket',
+                  's3:GetObject',
+                  's3:PutObject',
+                  's3:DeleteObject',
+                ],
+                resources: [
+                  contractTemplateBucket.bucketArn,
+                  contractTemplateBucket.bucketArn + '/*'
+                ],
+              }),
+            ],
+            lambdaEnvironment: {
+              CONTRACT_BUCKET: contractTemplateBucket.bucketName,
+              DOC_DATA_PREFIX: DOC_DATA_PREFIX
+            }
           }
-        },
+        ],
         agentConfig: {
           description: 'Contract Searcher sample',
           userInput: true,
@@ -226,16 +234,18 @@ export class AgentPreparationToolkitStack extends cdk.Stack {
             POST_PROCESSING: promptManager.getPrompts(modelId).postProcessing
           },
           agentName: BedrockLogsWatcherName,
-          actionGroupConfig: {
-            openApiSchemaPath: './action-groups/bedrock-logs-watcher/schema/api-schema.yaml',
-            lambdaFunctionPath: './action-groups/bedrock-logs-watcher/lambda/',
-            lambdaPolicies: bedrockLogsWatcher.lambdaPolicies,
-            lambdaEnvironment: {
-              ATHENA_WORKGROUP: bedrockLogsWatcher.workGroup.name,
-              DATABASE: bedrockLogsWatcher.database.ref,
-              TABLE: bedrockLogsWatcher.table.ref,
+          actionGroupConfigs: [
+            {
+              openApiSchemaPath: './action-groups/bedrock-logs-watcher/schema/api-schema.yaml',
+              lambdaFunctionPath: './action-groups/bedrock-logs-watcher/lambda/',
+              lambdaPolicies: bedrockLogsWatcher.lambdaPolicies,
+              lambdaEnvironment: {
+                ATHENA_WORKGROUP: bedrockLogsWatcher.workGroup.name,
+                DATABASE: bedrockLogsWatcher.database.ref,
+                TABLE: bedrockLogsWatcher.table.ref,
+              }
             }
-          },
+          ],
           agentConfig: {
             description: 'bedrock logs watcher',
             userInput: true,

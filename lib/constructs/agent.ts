@@ -11,7 +11,7 @@ export interface AgentProps {
   readonly region: string;
   readonly name: string;
   readonly modelId: ModelId;
-  readonly actionGroups: ActionGroup[];
+  readonly actionGroups?: ActionGroup[];
   readonly userInput: boolean;
   readonly codeInterpreter: boolean;
   readonly description?: string;
@@ -42,8 +42,10 @@ export class Agent extends Construct {
       region: props.region,
       agentName: `${props.prefix}${props.name}`,
       knowledgeBaseIds: props.knowledgeBases ? props.knowledgeBases.map(KnowledgeBase => KnowledgeBase.knowledgeBaseId): [],
-      lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
-      s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
+      ...(props.actionGroups && {
+        lambdaFunctions: props.actionGroups.map(actionGroup => actionGroup.lambdaFunction),
+        s3Buckets: props.actionGroups.map(actionGroup => actionGroup.bucket)
+      })
     });
 
     const agent = new bedrock.CfnAgent(this, `${props.prefix}Agent`, {
@@ -57,7 +59,7 @@ export class Agent extends Construct {
       foundationModel: props.modelId,
       idleSessionTtlInSeconds:600,
       actionGroups: [
-        ...props.actionGroups.map(actionGroup => ({
+        ...(props.actionGroups ? props.actionGroups.map(actionGroup => ({
           actionGroupName: actionGroup.actionGroupName,
           actionGroupExecutor: {
             lambda: actionGroup.lambdaFunction.functionArn
@@ -68,7 +70,7 @@ export class Agent extends Construct {
               s3ObjectKey: actionGroup.apiSchemaObjectKey,
             },
           },
-        })),
+        })) : []),
         ...(props.userInput ? [{
           actionGroupName: 'UserInput',
           parentActionGroupSignature: 'AMAZON.UserInput',
@@ -158,12 +160,14 @@ export class Agent extends Construct {
     });
     agent.node.addDependency(agentRole);
 
-    for (const actionGroup of props.actionGroups){
-      actionGroup.lambdaFunction.addPermission('bedrock-agents',{
-        principal: new iam.ServicePrincipal('bedrock.amazonaws.com'),
-        action: 'lambda:InvokeFunction',
-        sourceArn: agent.attrAgentArn
-      })
+    if (props.actionGroups) {
+      for (const actionGroup of props.actionGroups) {
+        actionGroup.lambdaFunction.addPermission('bedrock-agents', {
+          principal: new iam.ServicePrincipal('bedrock.amazonaws.com'),
+          action: 'lambda:InvokeFunction',
+          sourceArn: agent.attrAgentArn
+        });
+      }
     }
 
     this.agentName = agent.agentName
